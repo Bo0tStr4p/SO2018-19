@@ -1,9 +1,14 @@
 #include "bitmap.h"
 
+
 // converts a block index to an index in the array,
 // and a char that indicates the offset of the bit inside the array
 BitMapEntryKey BitMap_blockToIndex(int num){
-	return;
+	BitMapEntryKey key;
+	char offset = num % 8;
+	key.entry_num = num / 8;	//Alessandro: indice dell'array
+	key.bit_num = offset;		//Alessandro: offset del bit dentro l'array
+	return key;
 }
 
 // converts a bit to a linear index
