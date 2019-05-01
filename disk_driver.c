@@ -1,5 +1,11 @@
-#include <unistd.h>
+#include <unistd.h> //access, close
 #include <stdlib.h>
+#include <string.h>
+#include <fcntl.h> //posix_fallocate
+#include <sys/types.h> //Open
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #include "disk_driver.h"
 
@@ -52,7 +58,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		
 		//R. Attraverso la posix_fallocate vado ad indicare al S.O. che nella memoria virtuale deve riservare sizeof(DiskHeader)+bitmap_size bit al mio file fd
         if(posix_fallocate(fd,0,sizeof(DiskHeader)+bitmap_size > 0)){
-        	printf("Errore posix f-allocate");
+        	fprintf(stderr,"Errore posix f-allocate");
         	close(fd);
         	exit(-1);
         }
@@ -86,7 +92,7 @@ static int disk_header_init(int file_descriptor, int size, DiskHeader* disk_head
 	//R. Utilizzo mmap per ottenere i primi sizeof(DiskHeader)+bitmap_size bit in modo da costruire il disk header
 	disk_header = (DiskHeader*) mmap(0, size, PROT_READ|PROT_WRITE,MAP_SHARED,file_descriptor,0);
     if(disk_header == MAP_FAILED){
-		printf("Error: mmap failed \n");
+		fprintf(stderr,"Error: mmap failed \n");
         return -1;
     }
     return 0;
