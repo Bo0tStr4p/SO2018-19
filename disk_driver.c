@@ -120,7 +120,7 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
 // returns the first free blockin the disk from position (checking the bitmap)
 //R. La funzione restituisce -1 in caso di errore, altrimenti la posizione del disco
 int DiskDriver_getFreeBlock(DiskDriver* disk, int start){
-	//R. Verifico che venga passato un disco corretto e che la posizione desiderata non sia superiore al numero di blocchi del disco
+	//R. Verifico che venga passato un disco corretto e che la posizione desiderata non sia superiore al numero di blocchi del disco.
 	if(disk == NULL || start >= disk->header->num_blocks)
         return -1;
     
