@@ -13,7 +13,10 @@ BitMapEntryKey BitMap_blockToIndex(int num){
 
 // converts a bit to a linear index
 int BitMap_indexToBlock(int entry, uint8_t bit_num){
-	return 0;
+	if(entry < 0 || bit_num < 0) return -1;
+	
+	int res = (entry*8) + bit_num; 
+	return res;
 }
 
 // returns the index of the first bit having status "status"
