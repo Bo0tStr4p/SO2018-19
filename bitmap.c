@@ -37,5 +37,19 @@ int BitMap_get(BitMap* bmap, int start, int status){
 
 // sets the bit at index pos in bmap to status
 int BitMap_set(BitMap* bmap, int pos, int status){
-	return 0;
+	if(pos > bmap->num_bits || pos < 0) return -1;				//A. se pos è più grande del numero dei blocchi o è minore di 0, errore	
+	BitMapEntryKey key = BitMap_blockToIndex(pos);
+	
+	unsigned char flag = 1 << key->bit_num;						//flag di controllo
+	unsigned char bitToSet = bmap->entries[key->entry_num];		//bit da settare
+	
+	if(status){
+		bmap->entries[key->entry_num] = bitToSet | flag;
+		return bitToSet | flag;
+	}
+	else{
+		bmap->entries[map.entry_num] = bitToSet & (~flag);       
+        return bitToSet & (~flag);
+	}
+	
 }
