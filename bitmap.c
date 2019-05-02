@@ -4,10 +4,10 @@
 // converts a block index to an index in the array,
 // and a char that indicates the offset of the bit inside the array
 BitMapEntryKey BitMap_blockToIndex(int num){
-	BitMapEntryKey key = (BitMapEntryKey*)malloc(sizeof(BitMapEntryKey));
+	BitMapEntryKey* key = (BitMapEntryKey*)malloc(sizeof(BitMapEntryKey));
 	char offset = num % 8;		//A. offset del bit dentro l'array
-	key.entry_num = num / 8;	//A. indice dell'array
-	key.bit_num = offset;		
+	key->entry_num = num / 8;	//A. indice dell'array
+	key->bit_num = offset;		
 	return *key;
 }
 
