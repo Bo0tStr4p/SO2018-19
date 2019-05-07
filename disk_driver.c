@@ -57,7 +57,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		}
 		
 		//R. Attraverso la posix_fallocate vado ad indicare al S.O. che nella memoria virtuale deve riservare sizeof(DiskHeader)+bitmap_size bit al mio file fd
-        if(posix_fallocate(fd,0,sizeof(DiskHeader)+bitmap_size > 0)){
+        if(posix_fallocate(fd,0,sizeof(DiskHeader)+bitmap_size) > 0){
         	fprintf(stderr,"Errore posix f-allocate");
         	close(fd);
         	exit(-1);
