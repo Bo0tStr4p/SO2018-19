@@ -134,7 +134,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 // writes a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
 int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
-	 if(block_num > disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
+	 if(block_num > disk->header->bitmap_blocks || block_num < 0 || src == NULL || disk == NULL ){
 		fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
         return -1;
 	}
