@@ -218,7 +218,7 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
     void* writePosition = disk + position;
     
     //R. Sfrutto memcpy per copiare la memoria del blocco che voglio scrivere all'interno del blocco del disco
-    memcpy(writePosition, 0, BLOCK_SIZE);
+    memset(writePosition, 0, BLOCK_SIZE);
 	
 	return 0;
 }
