@@ -243,7 +243,7 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start){
 // writes the data (flushing the mmaps)
 int DiskDriver_flush(DiskDriver* disk){
 	
-	int bitmap_size = disk->header->num_blocks/bit_in_byte+1;
+	int bitmap_size = disk->header->num_blocks/8+1;
 	
 	//R. nel momento in cui abbiamo effettuato delle operazioni sul disco dobbiamo andare ad effettuare
 	// un flush sulla mmap. Senza l'utilizzo di msync non abbiamo nessuna garanzia che le operazioni 
