@@ -102,13 +102,65 @@ static int disk_header_init(int file_descriptor, int size, DiskHeader* disk_head
 // returns -1 if the block is free accrding to the bitmap
 // 0 otherwise
 int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
-	return 0;
+    if(block_num > disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
+		fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
+        return -1;
+	}
+	
+    //R. Inizializzo la mia bitmap
+    BitMap bitmap;
+    bitmap.num_bits = disk->header->bitmap_blocks;
+    bitmap.entries = disk->bitmap_data;
+
+	//TODO
+    //R. Qui devo andare a verificare che il blocco a cui voglio andare ad accedere non sia già scritto
+    if(BitMap_is_free_block(&bit_map, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
+		fprintf(stderr,"Error: Could't read a free block");
+        return -1;
+    }
+    
+    //R. Vado a calcolare la posizione in cui devo iniziare la lettura del blocco nel disco
+    int position = sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE);
+    
+    //R. Posiziono il puntatore
+    void* readPosition = disk + position;
+    
+    //R. Sfrutto memcpy per copiare la memoria del blocco che voglio leggere all'interno di dest
+    memcpy(dest, readPosition, BLOCK_SIZE);
+
+    return 0;
 }
 
 // writes a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
 int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
-	return 0;
+	 if(block_num > disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
+		fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
+        return -1;
+	}
+	
+    //R. Inizializzo la mia bitmap
+    BitMap bitmap;
+    bitmap.num_bits = disk->header->bitmap_blocks;
+    bitmap.entries = disk->bitmap_data;
+
+	//TODO
+    //R. Qui devo andare a verificare che il blocco a cui voglio andare a scrivere sia libero
+    if(!BitMap_is_free_block(&bit_map, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
+		fprintf(stderr,"Error: Could't write a full block");
+        return -1;
+    }
+    
+    //R. Vado a calcolare la posizione in cui devo iniziare la scrittura del blocco nel disco
+    int position = sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE);
+    
+    //R. Posiziono il puntatore
+    void* writePosition = disk + position;
+    
+    //R. Sfrutto memcpy per copiare la memoria del blocco che voglio scrivere all'interno del blocco del disco
+    memcpy(writePosition, src, BLOCK_SIZE);
+
+    return 0;
 }
 
 // frees a block in position block_num, and alters the bitmap accordingly
