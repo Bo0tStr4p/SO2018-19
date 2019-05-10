@@ -39,7 +39,13 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 	int index_to_get2 = BitMap_get(&bitmap1,5,0);
 	printf("Starts Looking from position:%i, bit with status:%i\n", 5, 0);
 	printf("index got:%i\n", index_to_get2);
-
+	
+	printf("\n--------------- 1.4 TEST BITMAP SET -------\n");
+	BitMap_set(&bitmap1,5,0);
+	printf("Setting bit at pos:%i with status:%i\n", 5, 0);
+	int index_to_get3 = BitMap_get(&bitmap1,5,0);
+	printf("Starts Looking from position:%i, bit with status:%i\n", 5, 0);
+	printf("index got:%i\n", index_to_get3);
 	
 	printf("\n--------------- 1.5 TEST BITMAP IS FREE BLOCK -------\n");
 	
