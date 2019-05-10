@@ -14,7 +14,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 	
 	BitMap_print(&bitmap1);
   
-	printf("--------------- 1.1 TEST BITMAP BLOCK TO INDEX -------\n");
+	printf("\n--------------- 1.1 TEST BITMAP BLOCK TO INDEX -------\n");
   
 	int i;
   

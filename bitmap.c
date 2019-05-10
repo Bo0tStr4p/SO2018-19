@@ -73,7 +73,7 @@ void BitMap_print(BitMap* bmap){
 	int i;
 	for(i=0; i < bmap->num_bits; i++){
 		BitMapEntryKey key = BitMap_blockToIndex(i);
-		printf("BitMap Bit:%i - BitMap Offset: %i - Bit in BitMapEntries:%c\n", key.entry_num, key.bit_num, bmap->entries[key.entry_num]);
+		printf("Bit:%i - Offset: %i - Value in BitMapEntries:%c - Status:%i\n", key.entry_num, key.bit_num, bmap->entries[key.entry_num], bmap->entries[key.entry_num] >> key.bit_num & 0x01 );
 	}
 }
 
