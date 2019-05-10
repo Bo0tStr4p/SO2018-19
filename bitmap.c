@@ -57,14 +57,14 @@ int BitMap_set(BitMap* bmap, int pos, int status){
 
 //FUNZIONI AUSILIARIE
 
-int BitMap_is_free_block(BitMap bmap, int block_num){
-	if(block_num > bmap.num_bits || block < 0) return -1;		//A. se il numero del blocco è maggiore del numero dei bit nella bitmap, o è minore di 0, errore.
+int BitMap_is_free_block(BitMap* bmap, int block_num){
+	if(block_num > bmap->num_bits || block_num < 0) return -1;		//A. se il numero del blocco è maggiore del numero dei bit nella bitmap, o è minore di 0, errore.
 	
 	BitMapEntryKey key = BitMap_blockToIndex(block_num);		//A. trasformo in entry e offset per trovare l'index
 	int index = key.entry_num;
 	
-	int bit = bmap.entries[index] >> key.bit_num & 0x01;		//A. identifico il bit			
+	int bit = bmap->entries[index] >> key.bit_num & 0x01;		//A. identifico il bit			
 	
-	if(bit == 0) return 0 else return -1;						//A. se il blocco è libero restituisce 0, altrimenti -1
+	if(bit == 0) return 0; else return -1;						//A. se il blocco è libero restituisce 0, altrimenti -1
 }
 

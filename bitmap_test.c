@@ -1,9 +1,16 @@
-
-#include "bitmap.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include "bitmap.h"
 
-int main(int agc, char** argv) { 						//A. Main di prova per testare le funzioni di bitmap.c 
+
+
+int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni di bitmap.c 
 	printf("--------------- 1. TEST BITMAP.C --------------------\n\n");
+  
+	BitMap bitmap1;
+	char bits1[8] = "00000000";
+	bitmap1.entries = bits1;
+	bitmap1.num_bits = 32;
   
 	printf("--------------- 1.1 TEST BITMAP BLOCK TO INDEX -------\n");
   
@@ -23,4 +30,10 @@ int main(int agc, char** argv) { 						//A. Main di prova per testare le funzion
 			printf("Byte:%i - Bit:%i -> Block:%i\n", i, j, block);
 		}
 	}
+	
+	printf("\n--------------- 1.5 TEST BITMAP IS FREE BLOCK -------\n");
+	
+	int res1;
+	res1 = BitMap_is_free_block(&bitmap1,5);
+	printf("res1:%i\n", res1); 
 }
