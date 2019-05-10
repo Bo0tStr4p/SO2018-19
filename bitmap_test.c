@@ -31,6 +31,16 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		}
 	}
 	
+	printf("\n--------------- 1.3 TEST BITMAP GET -------\n");
+	
+	int index_to_get1 = BitMap_get(&bitmap1,0,0);
+	printf("Starts Looking from position:%i, bit with status:%i\n", 0, 0);
+	printf("index got:%i\n", index_to_get1);
+	int index_to_get2 = BitMap_get(&bitmap1,5,0);
+	printf("Starts Looking from position:%i, bit with status:%i\n", 5, 0);
+	printf("index got:%i\n", index_to_get2);
+
+	
 	printf("\n--------------- 1.5 TEST BITMAP IS FREE BLOCK -------\n");
 	
 	int res1;
