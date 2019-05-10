@@ -8,9 +8,11 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 	printf("--------------- 1. TEST BITMAP.C --------------------\n\n");
   
 	BitMap bitmap1;
-	char bits1[8] = "00000000";
+	char bits1[8] = "00000001";
 	bitmap1.entries = bits1;
-	bitmap1.num_bits = 32;
+	bitmap1.num_bits = 64;
+	
+	BitMap_print(&bitmap1);
   
 	printf("--------------- 1.1 TEST BITMAP BLOCK TO INDEX -------\n");
   

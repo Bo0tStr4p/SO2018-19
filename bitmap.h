@@ -26,3 +26,5 @@ int BitMap_set(BitMap* bmap, int pos, int status);
 
 //verifica se un blocco della bitmap è vuoto o occupato
 int BitMap_is_free_block(BitMap* bmap, int block_num);
+
+void BitMap_print(BitMap* bmap);

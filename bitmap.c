@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "bitmap.h"
 
@@ -67,4 +68,16 @@ int BitMap_is_free_block(BitMap* bmap, int block_num){
 	
 	if(bit == 0) return 0; else return -1;						//A. se il blocco è libero restituisce 0, altrimenti -1
 }
+
+void BitMap_print(BitMap* bmap){
+	int i;
+	for(i=0; i < bmap->num_bits; i++){
+		BitMapEntryKey key = BitMap_blockToIndex(i);
+		printf("BitMap Bit:%i - BitMap Offset: %i - Bit in BitMapEntries:%c\n", key.entry_num, key.bit_num, bmap->entries[key.entry_num]);
+	}
+}
+
+
+
+
 
