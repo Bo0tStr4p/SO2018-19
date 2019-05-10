@@ -59,7 +59,7 @@ int main(int argc, char** argv){
 	printf("Ok\n");
 	
 	printf("Block 2... ");
-	FileBlock* block1 = create_file_block('2');
+	FileBlock* block2 = create_file_block('2');
 	if(block1 == NULL){
 		fprintf(stderr, "Error: could not create block 2\n");
 		return -1;
@@ -67,7 +67,7 @@ int main(int argc, char** argv){
 	printf("Ok\n");
 	
 	printf("Block 3... ");
-	FileBlock* block1 = create_file_block('3');
+	FileBlock* block3 = create_file_block('3');
 	if(block1 == NULL){
 		fprintf(stderr, "Error: could not create block 3\n");
 		return -1;
@@ -75,7 +75,7 @@ int main(int argc, char** argv){
 	printf("Ok\n");
 	
 	printf("Block 4... ");
-	FileBlock* block1 = create_file_block('4');
+	FileBlock* block4 = create_file_block('4');
 	if(block1 == NULL){
 		fprintf(stderr, "Error: could not create block 4\n");
 		return -1;
@@ -83,7 +83,7 @@ int main(int argc, char** argv){
 	printf("Ok\n");
 	
 	printf("Block 5... ");
-	FileBlock* block1 = create_file_block('5');
+	FileBlock* block5 = create_file_block('5');
 	if(block1 == NULL){
 		fprintf(stderr, "Error: could not create block 5\n");
 		return -1;
@@ -91,7 +91,7 @@ int main(int argc, char** argv){
 	printf("Ok\n");
 	
 	printf("Block 6... ");
-	FileBlock* block1 = create_file_block('6');
+	FileBlock* block6 = create_file_block('6');
 	if(block1 == NULL){
 		fprintf(stderr, "Error: could not create block 6\n");
 		return -1;
@@ -99,7 +99,7 @@ int main(int argc, char** argv){
 	printf("Ok\n");
 	
 	printf("Block 7... ");
-	FileBlock* block1 = create_file_block('7');
+	FileBlock* block7 = create_file_block('7');
 	if(block1 == NULL){
 		fprintf(stderr, "Error: could not create block 7\n");
 		return -1;
@@ -111,6 +111,7 @@ int main(int argc, char** argv){
 	
 	DiskDriver_init(my_disk,/*INSERIRE IL FILENAME*/,6);
 	DiskDriver_flush(my_disk);
+	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
 	
 	
 	

@@ -5,9 +5,21 @@
 #include <sys/types.h> //Open
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <stdio.h>
+#include <sys/mman.h> //mmap
 
 #include "disk_driver.h"
+
+//R. Funzione ausiliaria utilizzata per inizializzare il disk_header
+static int disk_header_init(int file_descriptor, int size, DiskHeader* disk_header){
+	//R. Utilizzo mmap per ottenere i primi sizeof(DiskHeader)+bitmap_size bit in modo da costruire il disk header
+	disk_header = (DiskHeader*) mmap(0, size, PROT_READ|PROT_WRITE,MAP_SHARED,file_descriptor,0);
+    if(disk_header == MAP_FAILED){
+		fprintf(stderr,"Error: mmap failed \n");
+        return -1;
+    }
+    return 0;
+}
 
 // opens the file (creating it if necessary_
 // allocates the necessary space on the disk
@@ -20,8 +32,8 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 	int bitmap_size = num_blocks/8;
 	DiskHeader* disk_header = NULL;
 	
-	if(disk == null || num_blocks < 1){ //R. Verifico che le condizioni iniziali vengano rispettate
-		printf("Error: disk is null or minimum blocks number less than 1. \n");
+	if(disk == NULL || num_blocks < 1){ //R. Verifico che le condizioni iniziali vengano rispettate
+		fprintf(stderr,"Error: disk is null or minimum blocks number less than 1. \n");
 		return;
 	}
 	
@@ -36,7 +48,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		}
 		
 		//R. Inizializzo disk_header
-        if(disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header) == -1)){
+        if(disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header) == -1){
 			close(fd);
             exit(-1);
 		}
@@ -64,7 +76,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
         }
         
         //R. Inizializzo disk_header
-        if(disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header) == -1)){
+        if(disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header) == -1){
 			close(fd);
             exit(-1);
 		}
@@ -87,17 +99,6 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 	return;
 }
 
-//R. Funzione ausiliaria utilizzata per inizializzare il disk_header
-static int disk_header_init(int file_descriptor, int size, DiskHeader* disk_header){
-	//R. Utilizzo mmap per ottenere i primi sizeof(DiskHeader)+bitmap_size bit in modo da costruire il disk header
-	disk_header = (DiskHeader*) mmap(0, size, PROT_READ|PROT_WRITE,MAP_SHARED,file_descriptor,0);
-    if(disk_header == MAP_FAILED){
-		fprintf(stderr,"Error: mmap failed \n");
-        return -1;
-    }
-    return 0;
-}
-
 // reads the block in position block_num
 // returns -1 if the block is free accrding to the bitmap
 // 0 otherwise
@@ -114,7 +115,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 
 	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare ad accedere non sia già scritto
-    if(BitMap_is_free_block(&bit_map, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
+    if(BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
 		fprintf(stderr,"Error: Could't read a free block");
         return -1;
     }
@@ -232,8 +233,8 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start){
     
     BitMap bitmap;
     
-    bitmap->num_bits = disk->header->bitmap_blocks;
-    bitmap->entries = bitmap_data;
+    bitmap.num_bits = disk->header->bitmap_blocks;
+    bitmap.entries = disk->bitmap_data;
     
     int position_free_block = BitMap_get(&bitmap, start, 0);
 
@@ -255,4 +256,18 @@ int DiskDriver_flush(DiskDriver* disk){
 	}								 
 
 	return 0;
+}
+
+//R. print many informations about disk status
+void DiskDriver_print_information(DiskDriver* disk,char* filename){
+    
+    printf("======== MY DISK INFORMATION ========\n");
+    printf("Filename: %s\n",filename);
+    printf("Number blocks: %d\n", disk->header->num_blocks);
+    printf("Free blocks: %d\n", disk->header->free_blocks);
+    printf("First free block: %d\n\n", disk->header->first_free_block);
+    printf("Used space: %d\n", ((disk->header->num_blocks)-(disk->header->free_blocks))*BLOCK_SIZE);
+    printf("Free space: %d\n", (disk->header->free_blocks * BLOCK_SIZE));
+    printf("=====================================\n");
+    return;
 }
