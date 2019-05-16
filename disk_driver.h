@@ -51,4 +51,4 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start);
 int DiskDriver_flush(DiskDriver* disk);
 
 //R. print many informations about disk status
-void DiskDriver_print_information(DiskDriver* disk,char* filename);
+void DiskDriver_print_information(DiskDriver* disk,const char* filename);

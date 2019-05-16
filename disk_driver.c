@@ -259,7 +259,7 @@ int DiskDriver_flush(DiskDriver* disk){
 }
 
 //R. print many informations about disk status
-void DiskDriver_print_information(DiskDriver* disk,char* filename){
+void DiskDriver_print_information(DiskDriver* disk,const char* filename){
     
     printf("======== MY DISK INFORMATION ========\n");
     printf("Filename: %s\n",filename);
