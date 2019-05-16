@@ -53,6 +53,13 @@ int main(int argc, char** argv){
 	
 	const char* filename = "./disk_driver_test.txt";
 	
+	//R. USARE SOLO DURANTE L'IMPLEMENTAZIONE DEI TEST, DOPO RIMUOVERE
+	int status = remove(filename);
+	if(status == -1){
+		fprintf(stderr,"Error: remove file\n");
+		return -1;
+	}
+	
 	//R. Inizializzo la memoria del mio disco
 	DiskDriver* my_disk = (DiskDriver*)malloc(sizeof(DiskDriver));
 	if(my_disk == NULL){

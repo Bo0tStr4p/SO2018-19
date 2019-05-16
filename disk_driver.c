@@ -11,14 +11,14 @@
 #include "disk_driver.h"
 
 //R. Funzione ausiliaria utilizzata per inizializzare il disk_header
-static int disk_header_init(int file_descriptor, int size, DiskHeader* disk_header){
+DiskHeader* disk_header_init(int file_descriptor, int size, DiskHeader* disk_header){
 	//R. Utilizzo mmap per ottenere i primi sizeof(DiskHeader)+bitmap_size bit in modo da costruire il disk header
 	disk_header = (DiskHeader*) mmap(0, size, PROT_READ|PROT_WRITE,MAP_SHARED,file_descriptor,0);
     if(disk_header == MAP_FAILED){
 		fprintf(stderr,"Error: mmap failed \n");
-        return -1;
+        return NULL;
     }
-    return 0;
+    return disk_header;
 }
 
 // opens the file (creating it if necessary_
@@ -28,74 +28,81 @@ static int disk_header_init(int file_descriptor, int size, DiskHeader* disk_head
 // compiles a disk header, and fills in the bitmap of appropriate size
 // with all 0 (to denote the free space);
 void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
+
 	int fd; //R. Qui salvo il file descriptor
-	int bitmap_size = num_blocks/8;
+
+	int bitmap_size = (num_blocks/8)+1;
+
 	DiskHeader* disk_header = NULL;
-	
+
 	if(disk == NULL || num_blocks < 1){ //R. Verifico che le condizioni iniziali vengano rispettate
 		fprintf(stderr,"Error: disk is null or minimum blocks number less than 1. \n");
 		return;
 	}
-	
+
 	if(!access(filename,F_OK)){
 		//R. Caso in cui il file esiste già
 		printf("file already exists, opening in progress");
 
         fd = open(filename,O_RDWR,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura, dopo con inode andrà modificato
+
         if(fd == -1){
 			fprintf(stderr,"Error: Unable to open file");
 			exit(-1);
 		}
-		
+
 		//R. Inizializzo disk_header
-        if(disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header) == -1){
+		disk_header = disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header); 
+        if(disk_header == NULL){
 			close(fd);
             exit(-1);
 		}
-		
+
 		disk->header = disk_header;
-        disk->header->first_free_block = 0;
+
+        //disk->header->first_free_block = 0;
         disk->bitmap_data = (char*)disk_header + sizeof(DiskHeader);
-		
+
 	}
 	else{
 		//R. Caso in cui il file non esiste e bisogna crearlo
 		printf("file does not exist, creation in progress\n");
-        
+
         fd = open(filename, O_RDWR|O_CREAT|O_TRUNC,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura, dopo con inode andrà modificato
+
         if(fd == -1){
 			fprintf(stderr,"Error: Unable to open file");
 			exit(-1);
 		}
-		
+
 		//R. Attraverso la posix_fallocate vado ad indicare al S.O. che nella memoria virtuale deve riservare sizeof(DiskHeader)+bitmap_size bit al mio file fd
         if(posix_fallocate(fd,0,sizeof(DiskHeader)+bitmap_size) > 0){
         	fprintf(stderr,"Errore posix f-allocate");
         	close(fd);
         	exit(-1);
         }
-        
+
         //R. Inizializzo disk_header
-        if(disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header) == -1){
+        disk_header = disk_header_init(fd, sizeof(DiskHeader)+bitmap_size,disk_header); 
+        if(disk_header == NULL){
 			close(fd);
             exit(-1);
 		}
-        
+
         //R. Vado ad arricchire disk e disk_header con tutte le informazioni iniziali per iniziare a scrivere sul disco
         disk->header = disk_header;
+
         disk->bitmap_data = (char*)disk_header + sizeof(DiskHeader);
         disk_header->num_blocks = num_blocks;
         disk_header->bitmap_blocks = num_blocks;
         disk_header->bitmap_entries = bitmap_size; 
         disk_header->free_blocks = num_blocks;
         disk_header->first_free_block = 0;
-     
         memset(disk->bitmap_data,0, bitmap_size); //R. Utilizzo memset per settare a tutti 0 i dati all'interno della bitmap
 
 	}
-	
+
 	disk->fd = fd; //R. Mi vado a salvare il file descriptor
-	
 	return;
 }
 
@@ -115,7 +122,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 
 	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare ad accedere non sia già scritto
-    if(BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
+    if(!BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
 		fprintf(stderr,"Error: Could't read a free block");
         return -1;
     }
@@ -147,7 +154,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
 
 	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare a scrivere sia libero
-    if(!BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
+    if(BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
 		fprintf(stderr,"Error: Could't write a full block\n");
         return -1;
     }
@@ -244,7 +251,7 @@ int DiskDriver_getFreeBlock(DiskDriver* disk, int start){
 // writes the data (flushing the mmaps)
 int DiskDriver_flush(DiskDriver* disk){
 	
-	int bitmap_size = disk->header->num_blocks/8+1;
+	int bitmap_size = (disk->header->num_blocks)/8+1;
 	
 	//R. nel momento in cui abbiamo effettuato delle operazioni sul disco dobbiamo andare ad effettuare
 	// un flush sulla mmap. Senza l'utilizzo di msync non abbiamo nessuna garanzia che le operazioni 
