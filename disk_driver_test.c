@@ -45,11 +45,13 @@ FileBlock* create_file_block(char value){
 int main(int argc, char** argv){
 	
 	printf("Hello, with this program you can test the correct functioning of the disk_driver library.\n");
-	
+	printf("Use cat on disk_driver_test.txt to see all the changes.\n\n");
 	printf("Press any key to continue...");
 	getchar();
 	
-	printf("\nTEST STARTING...\n\n");
+	printf("-----------------------------------------------------\nTEST STARTING...\n\n");
+	
+	const char* filename = "./disk_driver_test.txt";
 	
 	//R. Inizializzo la memoria del mio disco
 	DiskDriver* my_disk = (DiskDriver*)malloc(sizeof(DiskDriver));
@@ -121,11 +123,12 @@ int main(int argc, char** argv){
 	/*R. INIZIALIZZO IL MIO DISCO*/
 	
 	printf("INITIALIZATION OF BLOCKS COMPLETED\n\n");
+	
 	printf("INITIALIZATION OF DISK DRIVER WITH 6 BLOCKS ...");
 	
-	DiskDriver_init(my_disk,/*INSERIRE IL FILENAME*/,6);
+	DiskDriver_init(my_disk,filename,6);
 	DiskDriver_flush(my_disk);
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
@@ -144,7 +147,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
@@ -164,7 +167,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
@@ -184,7 +187,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
@@ -204,7 +207,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
@@ -224,7 +227,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
@@ -244,7 +247,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
@@ -264,7 +267,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
-	DiskDriver_print_information(my_disk,/*INSERIRE IL FILENAME*/);
+	DiskDriver_print_information(my_disk,filename);
 	
 	printf("OK\n");
 	
