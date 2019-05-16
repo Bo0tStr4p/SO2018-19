@@ -57,7 +57,6 @@ int main(int argc, char** argv){
 	int status = remove(filename);
 	if(status == -1){
 		fprintf(stderr,"Error: remove file\n");
-		return -1;
 	}
 	
 	//R. Inizializzo la memoria del mio disco
@@ -80,7 +79,7 @@ int main(int argc, char** argv){
 	
 	printf("Block 2... ");
 	FileBlock* block2 = create_file_block('2');
-	if(block1 == NULL){
+	if(block2 == NULL){
 		fprintf(stderr, "Error: could not create block 2\n");
 		return -1;
 	}
@@ -88,7 +87,7 @@ int main(int argc, char** argv){
 	
 	printf("Block 3... ");
 	FileBlock* block3 = create_file_block('3');
-	if(block1 == NULL){
+	if(block3 == NULL){
 		fprintf(stderr, "Error: could not create block 3\n");
 		return -1;
 	}
@@ -96,7 +95,7 @@ int main(int argc, char** argv){
 	
 	printf("Block 4... ");
 	FileBlock* block4 = create_file_block('4');
-	if(block1 == NULL){
+	if(block4 == NULL){
 		fprintf(stderr, "Error: could not create block 4\n");
 		return -1;
 	}
@@ -104,7 +103,7 @@ int main(int argc, char** argv){
 	
 	printf("Block 5... ");
 	FileBlock* block5 = create_file_block('5');
-	if(block1 == NULL){
+	if(block5 == NULL){
 		fprintf(stderr, "Error: could not create block 5\n");
 		return -1;
 	}
@@ -112,7 +111,7 @@ int main(int argc, char** argv){
 	
 	printf("Block 6... ");
 	FileBlock* block6 = create_file_block('6');
-	if(block1 == NULL){
+	if(block6 == NULL){
 		fprintf(stderr, "Error: could not create block 6\n");
 		return -1;
 	}
@@ -120,7 +119,7 @@ int main(int argc, char** argv){
 	
 	printf("Block 7... ");
 	FileBlock* block7 = create_file_block('7');
-	if(block1 == NULL){
+	if(block7 == NULL){
 		fprintf(stderr, "Error: could not create block 7\n");
 		return -1;
 	}
@@ -165,7 +164,7 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: getFreeBlock\n");
 		return -1;
 	}
-	
+
 	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
 		fprintf(stderr, "Error: could not write block 2 to disk\n");
 		return -1;
@@ -206,7 +205,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block4, free_block) == -1){
 		fprintf(stderr, "Error: could not write block 4 to disk\n");
 		return -1;
 	}
@@ -226,7 +225,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block5, free_block) == -1){
 		fprintf(stderr, "Error: could not write block 5 to disk\n");
 		return -1;
 	}
@@ -246,7 +245,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block6, free_block) == -1){
 		fprintf(stderr, "Error: could not write block 6 to disk\n");
 		return -1;
 	}
@@ -258,18 +257,18 @@ int main(int argc, char** argv){
 	
 	printf("OK\n");
 	
-	printf("WRITING BLOCK 7 TO DISK... ");
+	/*IN QUESTO CASO QUI NON DEVO RIUSCIRE A SCRIVERE, PERCHE' LA MEMORIA DEL DISCO E' PIENA*/
+	printf("WRITING BLOCK 7 TO DISK (Expected: Error) ... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 5);
 	if(free_block == -1){
-		fprintf(stderr, "Error: getFreeBlock\n");
+		printf("Error");
+	}
+	else{
+		printf("OK");
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
-		fprintf(stderr, "Error: could not write block 7 to disk\n");
-		return -1;
-	}
 	if(DiskDriver_flush(my_disk) == -1){
 		fprintf(stderr, "Error: flush\n");
 		return -1;
@@ -336,11 +335,12 @@ int main(int argc, char** argv){
 	
 	printf("READING BLOCK 7 TO DISK... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 6) == -1){
-		fprintf(stderr, "Error: could not read block 7 to disk\n");
+		printf("Error\n");
+	}
+	else{
+		fprintf(stderr,"OK\n");
 		return -1;
 	}
-	printf("OK\nDATA:\n");
-	printf("%s\n\n", block_test->data);
 	
 	/*=========================================================*/
 	/*R. LIBERO I VARI BLOCCHI*/
@@ -353,7 +353,7 @@ int main(int argc, char** argv){
 	printf("OK\n");
 	printf("TRYING TO READ BLOCK 0:\n");
 	if(DiskDriver_readBlock(my_disk, block_test, 0) == -1){
-		fprintf(stderr,"ERROR");
+		fprintf(stderr,"ERROR\n");
 	}
 	else{
 		printf("OK\n");
