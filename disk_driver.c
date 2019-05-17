@@ -31,7 +31,11 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 
 	int fd; //R. Qui salvo il file descriptor
 
-	int bitmap_size = (num_blocks/8)+1;
+	int bitmap_size = (num_blocks/8);
+	
+	//R. Dobbiamo avere almeno un blocco per la bitmap
+	if(bitmap_size == 0)
+		bitmap_size++;
 
 	DiskHeader* disk_header = NULL;
 
@@ -44,7 +48,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		//R. Caso in cui il file esiste già
 		printf("file already exists, opening in progress");
 
-        fd = open(filename,O_RDWR,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura, dopo con inode andrà modificato
+        fd = open(filename,O_RDWR,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura
 
         if(fd == -1){
 			fprintf(stderr,"Error: Unable to open file");
@@ -68,7 +72,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 		//R. Caso in cui il file non esiste e bisogna crearlo
 		printf("file does not exist, creation in progress\n");
 
-        fd = open(filename, O_RDWR|O_CREAT|O_TRUNC,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura, dopo con inode andrà modificato
+        fd = open(filename, O_RDWR|O_CREAT|O_TRUNC,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura
 
         if(fd == -1){
 			fprintf(stderr,"Error: Unable to open file");
@@ -154,7 +158,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
 
 	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare a scrivere sia libero
-    if(BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
+    if(BitMap_is_free_block(&bitmap, block_num)){ 
 		fprintf(stderr,"Error: Could't write a full block\n");
         return -1;
     }
@@ -198,8 +202,8 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
 
 	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare a liberare sia libero
-    if(!BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
-		fprintf(stderr,"Error: Could't write a full block\n");
+    if(!BitMap_is_free_block(&bitmap, block_num)){ 
+		fprintf(stderr,"Error: Could't free a free block\n");
         return -1;
     }
     
@@ -235,7 +239,7 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
 //R. La funzione restituisce -1 in caso di errore, altrimenti la posizione del disco
 int DiskDriver_getFreeBlock(DiskDriver* disk, int start){
 	//R. Verifico che venga passato un disco corretto e che la posizione desiderata non sia superiore al numero di blocchi del disco.
-	if(disk == NULL || start >= disk->header->num_blocks)
+	if(disk == NULL || start > disk->header->num_blocks)
         return -1;
     
     BitMap bitmap;
