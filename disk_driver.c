@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/mman.h> //mmap
+#include <errno.h>
 
 #include "disk_driver.h"
 
@@ -31,11 +32,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 
 	int fd; //R. Qui salvo il file descriptor
 
-	int bitmap_size = (num_blocks/8);
-	
-	//R. Dobbiamo avere almeno un blocco per la bitmap
-	if(bitmap_size == 0)
-		bitmap_size++;
+	int bitmap_size = (num_blocks/8)+1;
 
 	DiskHeader* disk_header = NULL;
 
@@ -46,7 +43,8 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 
 	if(!access(filename,F_OK)){
 		//R. Caso in cui il file esiste già
-		printf("file already exists, opening in progress");
+		
+		//R. debug printf("file already exists, opening in progress");
 
         fd = open(filename,O_RDWR,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura
 
@@ -70,7 +68,8 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 	}
 	else{
 		//R. Caso in cui il file non esiste e bisogna crearlo
-		printf("file does not exist, creation in progress\n");
+		
+		//R. debug printf("file does not exist, creation in progress\n");
 
         fd = open(filename, O_RDWR|O_CREAT|O_TRUNC,(mode_t)0666); //R. ATTENZIONE, Attualmente di default 0666 per apertura
 
@@ -114,7 +113,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 // returns -1 if the block is free accrding to the bitmap
 // 0 otherwise
 int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
-    if(block_num > disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
+    if(block_num >= disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
 		fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
         return -1;
 	}
@@ -124,21 +123,45 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
     bitmap.num_bits = disk->header->bitmap_blocks;
     bitmap.entries = disk->bitmap_data;
 
-	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare ad accedere non sia già scritto
     if(!BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
 		fprintf(stderr,"Error: Could't read a free block");
         return -1;
     }
     
+    /*Versione con memcpy non funzionante
     //R. Vado a calcolare la posizione in cui devo iniziare la lettura del blocco nel disco
     int position = sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE);
-    
     //R. Posiziono il puntatore
     void* readPosition = disk + position;
-    
     //R. Sfrutto memcpy per copiare la memoria del blocco che voglio leggere all'interno di dest
     memcpy(dest, readPosition, BLOCK_SIZE);
+	*/
+	
+	//R. Estraggo il FileDescriptor
+    int fd = disk->fd;
+    
+    //R. Vado a spostare il FileDescriptor nella posizione iniziale in cui devo iniziare a scrivere
+	off_t offset = lseek(fd, sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE), SEEK_SET);	
+	if(offset == -1){
+		fprintf(stderr,"Error: lseek");
+		return -1;
+	}
+		
+	//R. Classica funzione di scrittura con il file descriptor
+	int ret, read_bytes = 0;
+	while(read_bytes < BLOCK_SIZE){																		
+		if((ret = read(fd, dest + read_bytes, BLOCK_SIZE - read_bytes)) == -1){
+			if(errno == EINTR) 
+				continue;
+			else{
+				fprintf(stderr,"Error: read\n");
+				return -1;
+			}
+		}
+			
+		read_bytes += ret;						
+	}
 
     return 0;
 }
@@ -146,8 +169,8 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 // writes a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
 int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
-	 if(block_num > disk->header->bitmap_blocks || block_num < 0 || src == NULL || disk == NULL ){
-		fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
+	 if(block_num >= disk->header->bitmap_blocks || block_num < 0 || src == NULL || disk == NULL ){
+		fprintf(stderr,"Error: could not start with write block. Bad parameters \n");
         return -1;
 	}
 	
@@ -156,7 +179,6 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
     bitmap.num_bits = disk->header->bitmap_blocks;
     bitmap.entries = disk->bitmap_data;
 
-	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare a scrivere sia libero
     if(BitMap_is_free_block(&bitmap, block_num)){ 
 		fprintf(stderr,"Error: Could't write a full block\n");
@@ -174,15 +196,40 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
 	    disk->header->first_free_block = DiskDriver_getFreeBlock(disk, block_num+1);
 	   
 	disk->header->free_blocks -=1;
-    
+	
+    /* Versione con memcpy non funziona
     //R. Vado a calcolare la posizione in cui devo iniziare la scrittura del blocco nel disco
-    int position = sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE);
-    
-    //R. Posiziono il puntatore
-    void* writePosition = disk + position;
-    
+    int position = sizeof(DiskHeader)+(disk->header->bitmap_entries)+(block_num*BLOCK_SIZE);
+    //R. Posiziono il puntatore alla posizione in cui devo iniziare la scrittura del blocco nel disco
+    void* writePosition = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
     //R. Sfrutto memcpy per copiare la memoria del blocco che voglio scrivere all'interno del blocco del disco
     memcpy(writePosition, src, BLOCK_SIZE);
+    */
+    
+    //R. Estraggo il FileDescriptor
+    int fd = disk->fd;
+    
+    //R. Vado a spostare il FileDescriptor nella posizione iniziale in cui devo iniziare a scrivere
+	off_t offset = lseek(fd, sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE), SEEK_SET);	
+	if(offset == -1){
+		fprintf(stderr,"Error: lseek");
+		return -1;
+	}
+		
+	//R. Classica funzione di scrittura con il file descriptor
+	int ret, written_bytes = 0;
+	while(written_bytes < BLOCK_SIZE){																		
+		if((ret = write(fd, src + written_bytes, BLOCK_SIZE - written_bytes)) == -1){
+			if(errno == EINTR) 
+				continue;
+			else{
+				fprintf(stderr,"Error: write\n");
+				return -1;
+			}
+		}
+			
+		written_bytes += ret;						
+	}
 
     return 0;
 }
@@ -190,7 +237,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
 // frees a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
 int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
-	if(block_num > disk->header->bitmap_blocks || block_num < 0 || disk == NULL ){
+	if(block_num >= disk->header->bitmap_blocks || block_num < 0 || disk == NULL ){
 		fprintf(stderr,"Error: could not start with free block. Bad parameters \n");
         return -1;
 	}
@@ -200,7 +247,6 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
     bitmap.num_bits = disk->header->bitmap_blocks;
     bitmap.entries = disk->bitmap_data;
 
-	//TODO
     //R. Qui devo andare a verificare che il blocco a cui voglio andare a liberare sia libero
     if(!BitMap_is_free_block(&bitmap, block_num)){ 
 		fprintf(stderr,"Error: Could't free a free block\n");
@@ -223,14 +269,42 @@ int DiskDriver_freeBlock(DiskDriver* disk, int block_num){
 	//R. Operazioni successive non strettamente necessarie. Se setto a 0 la bitmap posso anche lasciare
 	//   Sporca la memoria, tanto successivamente viene sovrascritta
 	
+	/* Operazione con memcpy non funzionante
 	//R. Vado a calcolare la posizione in cui devo iniziare la scrittura del blocco nel disco
     int position = sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE);
-	
 	//R. Posiziono il puntatore
     void* writePosition = disk + position;
-    
     //R. Sfrutto memcpy per copiare la memoria del blocco che voglio scrivere all'interno del blocco del disco
     memset(writePosition, 0, BLOCK_SIZE);
+    */
+    
+    //R. Estraggo il FileDescriptor
+    int fd = disk->fd;
+    
+    //R. Vado a spostare il FileDescriptor nella posizione iniziale in cui devo iniziare a scrivere
+	off_t offset = lseek(fd, sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE), SEEK_SET);	
+	if(offset == -1){
+		fprintf(stderr,"Error: lseek");
+		return -1;
+	}
+	
+	//R. Setto tutti i bit a 0
+	char buffer[BLOCK_SIZE] = {0};
+		
+	//R. Classica funzione di scrittura con il file descriptor
+	int ret, written_bytes = 0;
+	while(written_bytes < BLOCK_SIZE){																		
+		if((ret = write(fd, buffer + written_bytes, BLOCK_SIZE - written_bytes)) == -1){
+			if(errno == EINTR) 
+				continue;
+			else{
+				fprintf(stderr,"Error: write\n");
+				return -1;
+			}
+		}
+			
+		written_bytes += ret;						
+	}
 	
 	return 0;
 }
