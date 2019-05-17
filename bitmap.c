@@ -42,8 +42,8 @@ int BitMap_set(BitMap* bmap, int pos, int status){
 	if(pos > bmap->num_bits || pos < 0) return -1;				//A. se pos è più grande del numero dei blocchi o è minore di 0, errore	
 	BitMapEntryKey key = BitMap_blockToIndex(pos);
 	
-	unsigned char flag = 1 << key.bit_num;						//flag di controllo
-	unsigned char bitToSet = bmap->entries[key.entry_num];		//bit da settare
+	unsigned char flag = 1 << key.bit_num;						//A. flag di controllo
+	unsigned char bitToSet = bmap->entries[key.entry_num];		//A. bit da settare
 	
 	if(status){
 		bmap->entries[key.entry_num] = bitToSet | flag;
