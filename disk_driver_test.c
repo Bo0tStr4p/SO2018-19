@@ -43,7 +43,6 @@ FileBlock* create_file_block(char value){
 	for(i = 0; i < BLOCK_SIZE-sizeof(BlockHeader); i++) data_block[i] = value;
 	data_block[BLOCK_SIZE-sizeof(BlockHeader)-1] = '\0';
 	strcpy(file_block->data, data_block);
-	
 	return file_block;
 }
 
@@ -59,10 +58,10 @@ int main(int argc, char** argv){
 	const char* filename = "./disk_driver_test.txt";
 	
 	//R. USARE SOLO DURANTE L'IMPLEMENTAZIONE DEI TEST, DOPO RIMUOVERE
-	int status = remove(filename);
-	if(status == -1){
-		fprintf(stderr,"%s Error: remove file\n %s",KRED,KNRM);
-	}
+	//int status = remove(filename);
+	//if(status == -1){
+	//	fprintf(stderr,"%s Error: remove file\n %s",KRED,KNRM);
+	//}
 	
 	//R. Inizializzo la memoria del mio disco
 	DiskDriver* my_disk = (DiskDriver*)malloc(sizeof(DiskDriver));
@@ -162,7 +161,7 @@ int main(int argc, char** argv){
 	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
 	printf("%s\n",KNRM);
-	
+
 	printf("Writing block 2 to disk (Expected: Ok)... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 0);
@@ -170,8 +169,6 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: getFreeBlock\n");
 		return -1;
 	}
-	
-	printf("FREE_BLOCK IS: %d\n",free_block);
 
 	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
 		fprintf(stderr, "%sError: could not write block 2 to disk\n%s",KRED,KNRM);
@@ -193,8 +190,6 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: getFreeBlock\n");
 		return -1;
 	}
-	
-	printf("FREE_BLOCK IS: %d\n",free_block);
 	
 	if(DiskDriver_writeBlock(my_disk, block3, free_block) == -1){
 		fprintf(stderr, "%sError: could not write block 3 to disk\n%s",KRED,KNRM);
@@ -371,7 +366,11 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	printf("\n\nFree block 2 (Expected: Ok)...");
+	printf("\n\n%s",KYEL);
+	DiskDriver_print_information(my_disk,filename);
+	printf("%s",KNRM);
+	
+	printf("\nFree block 2 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 1) == -1){
 		fprintf(stderr, "%sError: could not free block 2 to disk\n%s",KRED,KNRM);
 		return -1;
@@ -382,7 +381,11 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	printf("\n\nFree block 3 (Expected: Ok)...");
+	printf("\n\n%s",KYEL);
+	DiskDriver_print_information(my_disk,filename);
+	printf("%s",KNRM);
+	
+	printf("\nFree block 3 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 2) == -1){
 		fprintf(stderr, "%sError: could not free block 3 to disk\n%s",KRED,KNRM);
 		return -1;
@@ -393,7 +396,11 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	printf("\n\nFree block 4 (Expected: Ok)...");
+	printf("\n\n%s",KYEL);
+	DiskDriver_print_information(my_disk,filename);
+	printf("%s",KNRM);
+	
+	printf("\nFree block 4 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 3) == -1){
 		fprintf(stderr, "%sError: could not free block 4 to disk\n%s",KRED,KNRM);
 		return -1;
@@ -404,7 +411,11 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	printf("\n\nFree block 5 (Expected: Ok)...");
+	printf("\n\n%s",KYEL);
+	DiskDriver_print_information(my_disk,filename);
+	printf("%s",KNRM);
+	
+	printf("\nFree block 5 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 4) == -1){
 		fprintf(stderr, "%sError: could not free block 5 to disk\n%s",KRED,KNRM);
 		return -1;
@@ -415,7 +426,11 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	printf("\n\nFree block 6 (Expected: Ok)...");
+	printf("\n\n%s",KYEL);
+	DiskDriver_print_information(my_disk,filename);
+	printf("%s",KNRM);
+	
+	printf("\nFree block 6 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 5) == -1){
 		fprintf(stderr, "%sError: could not free block 6 to disk\n%s",KRED,KNRM);
 		return -1;
@@ -425,16 +440,21 @@ int main(int argc, char** argv){
 		fprintf(stderr,"Ok\n");
 		return -1;
 	}
-	/*
-	printf("\n\nFree block 7 (Expected: Error)...");
+	
+	printf("\n\n%s",KYEL);
+	DiskDriver_print_information(my_disk,filename);
+	printf("%s",KNRM);
+	
+	printf("\nFree block 7 (Expected: Error)...");
 	if(DiskDriver_freeBlock(my_disk, 6) != -1){
 		fprintf(stderr, "%sOk\n%s",KRED,KNRM);
 		return -1;
 	}
-	*/
+	printf("%sError\n%s",KGRN,KNRM);
+	
 	/*=========================================================*/
 	/*R. END*/
-	printf("\n\n\n");
+	printf("\n");
 	
 	free(my_disk);
 	free(block_test);
@@ -446,7 +466,7 @@ int main(int argc, char** argv){
 	free(block6);
 	free(block7);
 	
-	printf("END\n\n");
+	printf("%sEnd%s\n\n",KGRN,KNRM);
 	
 	return 0;
 	
