@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+
 /* Importo anche simplefs in modo tale da utilizzare FileBlock con BlockHeader
  * e simulare la scrittura dei blocchi del file system 
  * */
@@ -44,140 +49,144 @@ FileBlock* create_file_block(char value){
 
 int main(int argc, char** argv){
 	
-	printf("Hello, with this program you can test the correct functioning of the disk_driver library.\n");
+	printf("%s\nHello, with this program you can test the correct functioning of the disk_driver library.\n",KYEL);
 	printf("Use cat on disk_driver_test.txt to see all the changes.\n\n");
 	printf("Press any key to continue...");
 	getchar();
 	
-	printf("-----------------------------------------------------\nTEST STARTING...\n\n");
+	printf("%s-----------------------------------------------------\nTest starting...\n\n",KNRM);
 	
 	const char* filename = "./disk_driver_test.txt";
 	
 	//R. USARE SOLO DURANTE L'IMPLEMENTAZIONE DEI TEST, DOPO RIMUOVERE
 	int status = remove(filename);
 	if(status == -1){
-		fprintf(stderr,"Error: remove file\n");
+		fprintf(stderr,"%s Error: remove file\n %s",KRED,KNRM);
 	}
 	
 	//R. Inizializzo la memoria del mio disco
 	DiskDriver* my_disk = (DiskDriver*)malloc(sizeof(DiskDriver));
 	if(my_disk == NULL){
-		fprintf(stderr,"Error: malloc of DiskDriver\n");
+		fprintf(stderr,"%sError: malloc of DiskDriver\n%s",KRED,KNRM);
 		return -1;
 	}
 	
-	printf("INITIALIZATION OF 7 BLOCKS ...\n");
+	printf("Initialization of 7 blocks ...\n");
 	
 	//R. Inizializzo 5 File Block per i test
-	printf("Block 1... ");
+	printf("Block 1 (Expected: Ok)... ");
 	FileBlock* block1 = create_file_block('1');
 	if(block1 == NULL){
-		fprintf(stderr, "Error: could not create block 1\n");
+		fprintf(stderr, "%sError: could not create block 1\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("Ok\n");
+	printf("%sOk\n%s",KGRN,KNRM);
 	
-	printf("Block 2... ");
+	printf("Block 2 (Expected: Ok)... ");
 	FileBlock* block2 = create_file_block('2');
 	if(block2 == NULL){
-		fprintf(stderr, "Error: could not create block 2\n");
+		fprintf(stderr, "%sError: could not create block 2\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("Ok\n");
+	printf("%sOk\n%s",KGRN,KNRM);
 	
-	printf("Block 3... ");
+	printf("Block 3 (Expected: Ok)... ");
 	FileBlock* block3 = create_file_block('3');
 	if(block3 == NULL){
-		fprintf(stderr, "Error: could not create block 3\n");
+		fprintf(stderr, "%sError: could not create block 3\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("Ok\n");
+	printf("%sOk\n%s",KGRN,KNRM);
 	
-	printf("Block 4... ");
+	printf("Block 4 (Expected: Ok)... ");
 	FileBlock* block4 = create_file_block('4');
 	if(block4 == NULL){
-		fprintf(stderr, "Error: could not create block 4\n");
+		fprintf(stderr, "%sError: could not create block 4\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("Ok\n");
+	printf("%sOk\n%s",KGRN,KNRM);
 	
-	printf("Block 5... ");
+	printf("Block 5 (Expected: Ok)... ");
 	FileBlock* block5 = create_file_block('5');
 	if(block5 == NULL){
-		fprintf(stderr, "Error: could not create block 5\n");
+		fprintf(stderr, "%sError: could not create block 5\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("Ok\n");
+	printf("%sOk\n%s",KGRN,KNRM);
 	
-	printf("Block 6... ");
+	printf("Block 6 (Expected: Ok)... ");
 	FileBlock* block6 = create_file_block('6');
 	if(block6 == NULL){
-		fprintf(stderr, "Error: could not create block 6\n");
+		fprintf(stderr, "%sError: could not create block 6\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("Ok\n");
+	printf("%sOk\n%s",KGRN,KNRM);
 	
-	printf("Block 7... ");
+	printf("Block 7 (Expected: Ok)... ");
 	FileBlock* block7 = create_file_block('7');
 	if(block7 == NULL){
-		fprintf(stderr, "Error: could not create block 7\n");
+		fprintf(stderr, "%sError: could not create block 7\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("Ok\n");
+	printf("%sOk\n%s",KGRN,KNRM);
+	
+	printf("%sInitialization of blocks completed%s\n\n",KGRN,KNRM);
 	
 	/*=========================================================*/
 	/*R. INIZIALIZZO IL MIO DISCO*/
 	
-	printf("INITIALIZATION OF BLOCKS COMPLETED\n\n");
-	
-	printf("INITIALIZATION OF DISK DRIVER WITH 6 BLOCKS ...");
-	
-	DiskDriver_init(my_disk,filename,6);
+	printf("Initialization of disk driver with 6 blocks (Expected: Ok)...");
+	DiskDriver_init(my_disk,filename,6); 
+	printf("%sOk\n%s",KGRN,KNRM);
 	DiskDriver_flush(my_disk);
+	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
-	
-	printf("OK\n");
+	printf("%s",KNRM);
 	
 	/*=========================================================*/
 	/*R. INIZIO A SCRIVERE I BLOCCHI SUL DISCO*/
 	
 	int free_block;
 	
-	printf("WRITING BLOCK 1 TO DISK... ");
+	printf("\nWriting block 1 to disk (Expected: Ok)... ");
 	
 	if(DiskDriver_writeBlock(my_disk, block1, 0) == -1){
-		fprintf(stderr, "Error: could not write block 1 to disk\n");
+		fprintf(stderr, "%sError: could not write block 1 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
 	if(DiskDriver_flush(my_disk) == -1){
-		fprintf(stderr, "Error: flush\n");
+		fprintf(stderr, "%sError: flush\n%s",KRED,KNRM);
 		return -1;
 	}
+	printf("%sOk\n\n%s",KGRN,KNRM);
+	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
+	printf("%s\n",KNRM);
 	
-	printf("OK\n");
-	
-	printf("WRITING BLOCK 2 TO DISK... ");
+	printf("Writing block 2 to disk (Expected: Ok)... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 0);
 	if(free_block == -1){
 		fprintf(stderr, "Error: getFreeBlock\n");
 		return -1;
 	}
+	
+	printf("FREE_BLOCK IS: %d\n",free_block);
 
 	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
-		fprintf(stderr, "Error: could not write block 2 to disk\n");
+		fprintf(stderr, "%sError: could not write block 2 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
 	if(DiskDriver_flush(my_disk) == -1){
-		fprintf(stderr, "Error: flush\n");
+		fprintf(stderr, "%sError: flush\n%s",KRED,KNRM);
 		return -1;
 	}
+	printf("%sOk\n\n%s",KGRN,KNRM);
+	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
+	printf("%s\n",KNRM);
 	
-	printf("OK\n");
-	
-	printf("WRITING BLOCK 3 TO DISK... ");
+	printf("Writing block 3 to disk (Expected: Ok)... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 1);
 	if(free_block == -1){
@@ -185,19 +194,22 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
+	printf("FREE_BLOCK IS: %d\n",free_block);
+	
 	if(DiskDriver_writeBlock(my_disk, block3, free_block) == -1){
-		fprintf(stderr, "Error: could not write block 3 to disk\n");
+		fprintf(stderr, "%sError: could not write block 3 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
 	if(DiskDriver_flush(my_disk) == -1){
-		fprintf(stderr, "Error: flush\n");
+		fprintf(stderr, "%sError: flush\n%s",KRED,KNRM);
 		return -1;
 	}
+	printf("%sOk\n\n%s",KGRN,KNRM);
+	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
+	printf("%s\n",KNRM);
 	
-	printf("OK\n");
-	
-	printf("WRITING BLOCK 4 TO DISK... ");
+	printf("Writing block 4 to disk (Expected: Ok)... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 2);
 	if(free_block == -1){
@@ -206,18 +218,19 @@ int main(int argc, char** argv){
 	}
 	
 	if(DiskDriver_writeBlock(my_disk, block4, free_block) == -1){
-		fprintf(stderr, "Error: could not write block 4 to disk\n");
+		fprintf(stderr, "%sError: could not write block 4 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
 	if(DiskDriver_flush(my_disk) == -1){
-		fprintf(stderr, "Error: flush\n");
+		fprintf(stderr, "%sError: flush\n%s",KRED,KNRM);
 		return -1;
 	}
+	printf("%sOk\n\n%s",KGRN,KNRM);
+	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
+	printf("%s\n",KNRM);
 	
-	printf("OK\n");
-	
-	printf("WRITING BLOCK 5 TO DISK... ");
+	printf("Writing block 5 to disk (Expected: Ok)... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 3);
 	if(free_block == -1){
@@ -226,18 +239,19 @@ int main(int argc, char** argv){
 	}
 	
 	if(DiskDriver_writeBlock(my_disk, block5, free_block) == -1){
-		fprintf(stderr, "Error: could not write block 5 to disk\n");
+		fprintf(stderr, "%sError: could not write block 5 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
 	if(DiskDriver_flush(my_disk) == -1){
-		fprintf(stderr, "Error: flush\n");
+		fprintf(stderr, "%sError: flush\n%s",KRED,KNRM);
 		return -1;
 	}
+	printf("%sOk\n\n%s",KGRN,KNRM);
+	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
+	printf("%s\n",KNRM);
 	
-	printf("OK\n");
-	
-	printf("WRITING BLOCK 6 TO DISK... ");
+	printf("Writing block 6 to disk (Expected: Ok)... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 4);
 	if(free_block == -1){
@@ -246,205 +260,181 @@ int main(int argc, char** argv){
 	}
 	
 	if(DiskDriver_writeBlock(my_disk, block6, free_block) == -1){
-		fprintf(stderr, "Error: could not write block 6 to disk\n");
+		fprintf(stderr, "%sError: could not write block 6 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
 	if(DiskDriver_flush(my_disk) == -1){
-		fprintf(stderr, "Error: flush\n");
+		fprintf(stderr, "%sError: flush\n%s",KRED,KNRM);
 		return -1;
 	}
+	printf("%sOk\n\n%s",KGRN,KNRM);
+	printf("%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
-	
-	printf("OK\n");
+	printf("%s\n",KNRM);
 	
 	/*IN QUESTO CASO QUI NON DEVO RIUSCIRE A SCRIVERE, PERCHE' LA MEMORIA DEL DISCO E' PIENA*/
-	printf("WRITING BLOCK 7 TO DISK (Expected: Error) ... ");
+	printf("Writing block 7 to disk (Expected: Error)... ");
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 5);
 	if(free_block == -1){
-		printf("Error");
+		printf("%sError\n%s",KGRN,KNRM);
 	}
 	else{
-		printf("OK");
+		printf("%sOk%s",KRED,KNRM);
 		return -1;
 	}
 	
 	if(DiskDriver_flush(my_disk) == -1){
-		fprintf(stderr, "Error: flush\n");
+		fprintf(stderr, "%sError: flush\n%s",KRED,KNRM);
 		return -1;
 	}
+	printf("\n%s",KYEL);
 	DiskDriver_print_information(my_disk,filename);
-	
-	printf("OK\n");
+	printf("%s\n",KNRM);
 	
 	/*=========================================================*/
 	/*R. INIZIO A LEGGERE I BLOCCHI SUL DISCO*/
 	FileBlock* block_test = (FileBlock*)malloc(sizeof(FileBlock));
 	if(block_test == NULL){
-		fprintf(stderr, "Error: malloc with block_test\n");
+		fprintf(stderr, "%sError: malloc with block_test\n%s",KRED,KNRM);
 		return -1;
 	}
 	
-	printf("READING BLOCK 1 TO DISK... ");
+	printf("Reading block 1 to disk (Expected: Ok)... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 0) == -1){
-		fprintf(stderr, "Error: could not read block 1 to disk\n");
+		fprintf(stderr, "%sError: could not read block 1 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\nDATA:\n");
-	printf("%s\n\n", block_test->data);
+	printf("%sOK%s\nDATA:\n",KGRN,KNRM);
+	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
-	printf("READING BLOCK 2 TO DISK... ");
+	printf("Reading block 2 to disk (Expected: Ok)... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 1) == -1){
-		fprintf(stderr, "Error: could not read block 2 to disk\n");
+		fprintf(stderr, "%sError: could not read block 2 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\nDATA:\n");
-	printf("%s\n\n", block_test->data);
+	printf("%sOK%s\nDATA:\n",KGRN,KNRM);
+	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
-	printf("READING BLOCK 3 TO DISK... ");
+	printf("Reading block 3 to disk (Expected: Ok)... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 2) == -1){
-		fprintf(stderr, "Error: could not read block 2 to disk\n");
+		fprintf(stderr, "%sError: could not read block 3 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\nDATA:\n");
-	printf("%s\n\n", block_test->data);
+	printf("%sOK%s\nDATA:\n",KGRN,KNRM);
+	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
-	printf("READING BLOCK 4 TO DISK... ");
+	printf("Reading block 4 to disk (Expected: Ok)... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 3) == -1){
-		fprintf(stderr, "Error: could not read block 4 to disk\n");
+		fprintf(stderr, "%sError: could not read block 4 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\nDATA:\n");
-	printf("%s\n\n", block_test->data);
+	printf("%sOK%s\nDATA:\n",KGRN,KNRM);
+	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
-	printf("READING BLOCK 5 TO DISK... ");
+	printf("Reading block 5 to disk (Expected: Ok)... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 4) == -1){
-		fprintf(stderr, "Error: could not read block 5 to disk\n");
+		fprintf(stderr, "%sError: could not read block 5 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\nDATA:\n");
-	printf("%s\n\n", block_test->data);
+	printf("%sOK%s\nDATA:\n",KGRN,KNRM);
+	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
-	printf("READING BLOCK 6 TO DISK... ");
+	printf("Reading block 6 to disk (Expected: Ok)... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 5) == -1){
-		fprintf(stderr, "Error: could not read block 6 to disk\n");
+		fprintf(stderr, "%sError: could not read block 6 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\nDATA:\n");
-	printf("%s\n\n", block_test->data);
+	printf("%sOK%s\nDATA:\n",KGRN,KNRM);
+	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
-	printf("READING BLOCK 7 TO DISK... ");
+	printf("Reading block 7 to disk (Expected: Error)... ");
 	if(DiskDriver_readBlock(my_disk, block_test, 6) == -1){
-		printf("Error\n");
+		printf("%sError\n%s",KGRN,KNRM);
 	}
 	else{
-		fprintf(stderr,"OK\n");
+		fprintf(stderr,"%sOk\n%s",KRED,KNRM);
 		return -1;
 	}
 	
 	/*=========================================================*/
 	/*R. LIBERO I VARI BLOCCHI*/
 	
-	printf("FREE BLOCK 0...");
+	printf("\nFree block 1 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 0) == -1){
-		fprintf(stderr, "Error: could not free block 1 to disk\n");
+		fprintf(stderr, "%sError: could not free block 1 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\n");
-	printf("TRYING TO READ BLOCK 0:\n");
-	if(DiskDriver_readBlock(my_disk, block_test, 0) == -1){
-		fprintf(stderr,"ERROR\n");
-	}
-	else{
-		printf("OK\n");
+	printf("%sOk\n%s",KGRN,KNRM);
+	if(DiskDriver_readBlock(my_disk, block_test, 0) != -1){
+		fprintf(stderr,"Ok\n");
+		return -1;
 	}
 	
-	printf("FREE BLOCK 1...");
+	printf("\n\nFree block 2 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 1) == -1){
-		fprintf(stderr, "Error: could not free block 1 to disk\n");
+		fprintf(stderr, "%sError: could not free block 2 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\n");
-	printf("TRYING TO READ BLOCK 1:\n");
-	if(DiskDriver_readBlock(my_disk, block_test, 1) == -1){
-		fprintf(stderr,"ERROR");
-	}
-	else{
-		printf("OK\n");
+	printf("%sOk\n%s",KGRN,KNRM);
+	if(DiskDriver_readBlock(my_disk, block_test, 1) != -1){
+		fprintf(stderr,"Ok\n");
+		return -1;
 	}
 	
-	printf("FREE BLOCK 2...");
+	printf("\n\nFree block 3 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 2) == -1){
-		fprintf(stderr, "Error: could not free block 2 to disk\n");
+		fprintf(stderr, "%sError: could not free block 3 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\n");
-	printf("TRYING TO READ BLOCK 2:\n");
-	if(DiskDriver_readBlock(my_disk, block_test, 2) == -1){
-		fprintf(stderr,"ERROR");
-	}
-	else{
-		printf("OK\n");
+	printf("%sOk\n%s",KGRN,KNRM);
+	if(DiskDriver_readBlock(my_disk, block_test, 2) != -1){
+		fprintf(stderr,"Ok\n");
+		return -1;
 	}
 	
-	printf("FREE BLOCK 3...");
+	printf("\n\nFree block 4 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 3) == -1){
-		fprintf(stderr, "Error: could not free block 3 to disk\n");
+		fprintf(stderr, "%sError: could not free block 4 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\n");
-	printf("TRYING TO READ BLOCK 3:\n");
-	if(DiskDriver_readBlock(my_disk, block_test, 3) == -1){
-		fprintf(stderr,"ERROR");
-	}
-	else{
-		printf("OK\n");
+	printf("%sOk\n%s",KGRN,KNRM);
+	if(DiskDriver_readBlock(my_disk, block_test, 3) != -1){
+		fprintf(stderr,"Ok\n");
+		return -1;
 	}
 	
-	printf("FREE BLOCK 4...");
+	printf("\n\nFree block 5 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 4) == -1){
-		fprintf(stderr, "Error: could not free block 4 to disk\n");
+		fprintf(stderr, "%sError: could not free block 5 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\n");
-	printf("TRYING TO READ BLOCK 4:\n");
-	if(DiskDriver_readBlock(my_disk, block_test, 4) == -1){
-		fprintf(stderr,"ERROR");
-	}
-	else{
-		printf("OK\n");
+	printf("%sOk\n%s",KGRN,KNRM);
+	if(DiskDriver_readBlock(my_disk, block_test, 4) != -1){
+		fprintf(stderr,"Ok\n");
+		return -1;
 	}
 	
-	printf("FREE BLOCK 5...");
+	printf("\n\nFree block 6 (Expected: Ok)...");
 	if(DiskDriver_freeBlock(my_disk, 5) == -1){
-		fprintf(stderr, "Error: could not free block 5 to disk\n");
+		fprintf(stderr, "%sError: could not free block 6 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
-	printf("OK\n");
-	printf("TRYING TO READ BLOCK 5:\n");
-	if(DiskDriver_readBlock(my_disk, block_test, 5) == -1){
-		fprintf(stderr,"ERROR");
-	}
-	else{
-		printf("OK\n");
-	}
-	
-	printf("FREE BLOCK 6...");
-	if(DiskDriver_freeBlock(my_disk, 6) == -1){
-		fprintf(stderr, "Error: could not free block 6 to disk\n");
+	printf("%sOk\n%s",KGRN,KNRM);
+	if(DiskDriver_readBlock(my_disk, block_test, 5) != -1){
+		fprintf(stderr,"Ok\n");
 		return -1;
 	}
-	printf("OK\n");
-	printf("TRYING TO READ BLOCK 6:\n");
-	if(DiskDriver_readBlock(my_disk, block_test, 6) == -1){
-		fprintf(stderr,"ERROR");
+	/*
+	printf("\n\nFree block 7 (Expected: Error)...");
+	if(DiskDriver_freeBlock(my_disk, 6) != -1){
+		fprintf(stderr, "%sOk\n%s",KRED,KNRM);
+		return -1;
 	}
-	else{
-		printf("OK\n");
-	}
-	
+	*/
 	/*=========================================================*/
 	/*R. END*/
+	printf("\n\n\n");
 	
 	free(my_disk);
 	free(block_test);
