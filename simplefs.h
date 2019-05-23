@@ -19,19 +19,23 @@ typedef struct {
 
 //Usiamo questa struttura per memorizzare il nostro Blocco Index
 //per i file
-typedef struct {
-  FileBlockIndex* previous; 			//Memorizziamo il predecessore
+struct {
+  struct fileBlockIndex* previous; 			//Memorizziamo il predecessore
   FileBlock blocks[MAX_BLOCKS]; 
-  FileBlockIndex* next; 				//Memorizziamo il successore
-} FileBlockIndex;
+  struct fileBlockIndex* next; 				//Memorizziamo il successore
+} fileBlockIndex;
+
+typedef struct fileBlockIndex FileBlockIndex;
 
 //Usiamo questa struttura per memorizzare il nostro blocco Index 
 //per le directory
-typedef struct {
-  DirectoryBlockIndex* previous; 		//Memorizziamo il predecessore
+struct {
+  struct directoryBlockIndex* previous; 		//Memorizziamo il predecessore
   DirectoryBlock blocks[MAX_BLOCKS];
-  DirectoryBlockIndex* next; 			//Memorizziamo il successore
-} DirectoryBlockIndex;
+  struct directoryBlockIndex* next; 			//Memorizziamo il successore
+} directoryBlockIndex;
+
+typedef struct directoryBlockIndex DirectoryBlockIndex;
 
 // this is in the first block of a chain, after the header
 typedef struct {
@@ -50,7 +54,7 @@ typedef struct {
 
 /******************* stuff on disk BEGIN *******************/
 typedef struct {
-  FileBlockIndex index;
+  FileBlockIndex* index;
   FileControlBlock fcb;
 } FirstFileBlock;
 
@@ -63,7 +67,7 @@ typedef struct {
 
 // this is the first physical block of a directory
 typedef struct {
-  DirectoryBlockIndex index;
+  DirectoryBlockIndex* index;
   FileControlBlock fcb;
   int num_entries;
   int file_blocks[ (BLOCK_SIZE

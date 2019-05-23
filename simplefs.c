@@ -1,4 +1,9 @@
+#include "bitmap.h"
+#include "disk_driver.h"
 #include "simplefs.h"
+#include <stdlib.h>
+#include <stdio.h>
+
 
 // initializes a file system on an already made disk
 // returns a handle to the top level directory stored in the first block
