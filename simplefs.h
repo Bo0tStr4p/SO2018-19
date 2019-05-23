@@ -2,8 +2,11 @@
 #include "bitmap.h"
 #include "disk_driver.h"
 
+#define MAX_BLOCKS 10
+
 /*these are structures stored on disk*/
 
+/*
 // header, occupies the first portion of each block in the disk
 // represents a chained list of blocks
 typedef struct {
@@ -11,7 +14,24 @@ typedef struct {
   int next_block;     // chained list (next_block)
   int block_in_file; // position in the file, if 0 we have a file control block
 } BlockHeader;
+*/
 
+
+//Usiamo questa struttura per memorizzare il nostro Blocco Index
+//per i file
+typedef struct {
+  FileBlockIndex* previous; 			//Memorizziamo il predecessore
+  FileBlock blocks[MAX_BLOCKS]; 
+  FileBlockIndex* next; 				//Memorizziamo il successore
+} FileBlockIndex;
+
+//Usiamo questa struttura per memorizzare il nostro blocco Index 
+//per le directory
+typedef struct {
+  DirectoryBlockIndex* previous; 		//Memorizziamo il predecessore
+  DirectoryBlock blocks[MAX_BLOCKS];
+  DirectoryBlockIndex* next; 			//Memorizziamo il successore
+} DirectoryBlockIndex;
 
 // this is in the first block of a chain, after the header
 typedef struct {
@@ -30,32 +50,33 @@ typedef struct {
 
 /******************* stuff on disk BEGIN *******************/
 typedef struct {
-  BlockHeader header;
+  FileBlockIndex index;
   FileControlBlock fcb;
-  char data[BLOCK_SIZE-sizeof(FileControlBlock) - sizeof(BlockHeader)] ;
 } FirstFileBlock;
 
 // this is one of the next physical blocks of a file
 typedef struct {
-  BlockHeader header;
-  char  data[BLOCK_SIZE-sizeof(BlockHeader)];
+  FileBlockIndex* index;
+  int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
+  char  data[BLOCK_SIZE - sizeof(FileBlockIndex*) - sizeof(int)];
 } FileBlock;
 
 // this is the first physical block of a directory
 typedef struct {
-  BlockHeader header;
+  DirectoryBlockIndex index;
   FileControlBlock fcb;
   int num_entries;
   int file_blocks[ (BLOCK_SIZE
-		   -sizeof(BlockHeader)
+		   -sizeof(DirectoryBlockIndex)
 		   -sizeof(FileControlBlock)
 		    -sizeof(int))/sizeof(int) ];
 } FirstDirectoryBlock;
 
 // this is remainder block of a directory
 typedef struct {
-  BlockHeader header;
-  int file_blocks[ (BLOCK_SIZE-sizeof(BlockHeader))/sizeof(int) ];
+  DirectoryBlockIndex* index;
+  int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
+  int file_blocks[ (BLOCK_SIZE-sizeof(DirectoryBlockIndex*)-sizeof(int))/sizeof(int) ];
 } DirectoryBlock;
 /******************* stuff on disk END *******************/
 
@@ -73,7 +94,7 @@ typedef struct {
   SimpleFS* sfs;                   // pointer to memory file system structure
   FirstFileBlock* fcb;             // pointer to the first block of the file(read it)
   FirstDirectoryBlock* directory;  // pointer to the directory where the file is stored
-  BlockHeader* current_block;      // current block in the file
+  FileBlock* current_block;        // current block in the file
   int pos_in_file;                 // position of the cursor
 } FileHandle;
 
@@ -81,7 +102,7 @@ typedef struct {
   SimpleFS* sfs;                   // pointer to memory file system structure
   FirstDirectoryBlock* dcb;        // pointer to the first block of the directory(read it)
   FirstDirectoryBlock* directory;  // pointer to the parent directory (null if top level)
-  BlockHeader* current_block;      // current block in the directory
+  DirectoryBlock* current_block;   // current block in the directory
   int pos_in_dir;                  // absolute position of the cursor in the directory
   int pos_in_block;                // relative position of the cursor in the block
 } DirectoryHandle;
