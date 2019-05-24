@@ -21,7 +21,8 @@ typedef struct {
 //per i file
 struct {
   struct fileBlockIndex* previous; 			//Memorizziamo il predecessore
-  FileBlock blocks[MAX_BLOCKS]; 
+  //FileBlock blocks[MAX_BLOCKS];
+  void* blocks; 							//verrà castato a FileBlock blocks[MAX_BLOCKS]
   struct fileBlockIndex* next; 				//Memorizziamo il successore
 } fileBlockIndex;
 
@@ -31,7 +32,8 @@ typedef struct fileBlockIndex FileBlockIndex;
 //per le directory
 struct {
   struct directoryBlockIndex* previous; 		//Memorizziamo il predecessore
-  DirectoryBlock blocks[MAX_BLOCKS];
+  //DirectoryBlock blocks[MAX_BLOCKS];
+  void* blocks;									//verrà castato a DirectoryBlock blocks[MAX_BLOCKS]
   struct directoryBlockIndex* next; 			//Memorizziamo il successore
 } directoryBlockIndex;
 
@@ -71,7 +73,7 @@ typedef struct {
   FileControlBlock fcb;
   int num_entries;
   int file_blocks[ (BLOCK_SIZE
-		   -sizeof(DirectoryBlockIndex)
+		   -sizeof(directoryBlockIndex)
 		   -sizeof(FileControlBlock)
 		    -sizeof(int))/sizeof(int) ];
 } FirstDirectoryBlock;
