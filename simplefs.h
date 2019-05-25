@@ -19,25 +19,21 @@ typedef struct {
 
 //Usiamo questa struttura per memorizzare il nostro Blocco Index
 //per i file
-struct {
+typedef struct {
   struct fileBlockIndex* previous; 			//Memorizziamo il predecessore
   //FileBlock blocks[MAX_BLOCKS];
   void* blocks; 							//verrà castato a FileBlock blocks[MAX_BLOCKS]
   struct fileBlockIndex* next; 				//Memorizziamo il successore
 } fileBlockIndex;
 
-typedef struct fileBlockIndex FileBlockIndex;
-
 //Usiamo questa struttura per memorizzare il nostro blocco Index 
 //per le directory
-struct {
+typedef struct {
   struct directoryBlockIndex* previous; 		//Memorizziamo il predecessore
   //DirectoryBlock blocks[MAX_BLOCKS];
   void* blocks;									//verrà castato a DirectoryBlock blocks[MAX_BLOCKS]
   struct directoryBlockIndex* next; 			//Memorizziamo il successore
 } directoryBlockIndex;
-
-typedef struct directoryBlockIndex DirectoryBlockIndex;
 
 // this is in the first block of a chain, after the header
 typedef struct {
@@ -56,20 +52,20 @@ typedef struct {
 
 /******************* stuff on disk BEGIN *******************/
 typedef struct {
-  FileBlockIndex* index;
+  fileBlockIndex index;
   FileControlBlock fcb;
 } FirstFileBlock;
 
 // this is one of the next physical blocks of a file
 typedef struct {
-  FileBlockIndex* index;
+  fileBlockIndex* index;
   int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
-  char  data[BLOCK_SIZE - sizeof(FileBlockIndex*) - sizeof(int)];
+  char  data[BLOCK_SIZE - sizeof(fileBlockIndex*) - sizeof(int)];
 } FileBlock;
 
 // this is the first physical block of a directory
 typedef struct {
-  DirectoryBlockIndex* index;
+  directoryBlockIndex index;
   FileControlBlock fcb;
   int num_entries;
   int file_blocks[ (BLOCK_SIZE
@@ -80,9 +76,9 @@ typedef struct {
 
 // this is remainder block of a directory
 typedef struct {
-  DirectoryBlockIndex* index;
+  directoryBlockIndex* index;
   int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
-  int file_blocks[ (BLOCK_SIZE-sizeof(DirectoryBlockIndex*)-sizeof(int))/sizeof(int) ];
+  int file_blocks[ (BLOCK_SIZE-sizeof(directoryBlockIndex*)-sizeof(int))/sizeof(int) ];
 } DirectoryBlock;
 /******************* stuff on disk END *******************/
 

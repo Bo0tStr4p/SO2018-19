@@ -8,7 +8,7 @@
 // initializes a file system on an already made disk
 // returns a handle to the top level directory stored in the first block
 DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
-	return;
+	return NULL;
 }
 
 // creates the inital structures, the top level directory
@@ -24,7 +24,7 @@ void SimpleFS_format(SimpleFS* fs){
 // returns null on error (file existing, no free blocks)
 // an empty file consists only of a block of type FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
-	return;
+	return NULL;
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
