@@ -14,34 +14,22 @@
  * e simulare la scrittura dei blocchi del file system 
  * */
 
-//R. Funzione per creare dei blockHeader example usati per ogni FileBlock
-BlockHeader create_block_header(int value){
-	BlockHeader header = {
-		.previous_block = value - 1, //R. Valori random, solo per test
-		.next_block = value ,
-		.block_in_file = value + 1
-	};
-	
-	return header;
-}
-
 //R. Funzione utilizzata per creare dei FileBlock example per testare il disk driver
 FileBlock* create_file_block(char value){
-	
 	int i;
-	
-	BlockHeader header = create_block_header((int)value);
 	FileBlock* file_block = (FileBlock*)malloc(sizeof(FileBlock));
 	if(file_block == NULL){
 		fprintf(stderr,"Error: malloc create_file_block\n");
 		return NULL;
 	}
-	file_block->header = header;
+	//R. Valori casuali
+	file_block->index = NULL;
+	file_block->position = 0;
 	
 	//R. Scrivo dei valori per riempire i blocchi
-	char data_block[BLOCK_SIZE-sizeof(BlockHeader)];
-	for(i = 0; i < BLOCK_SIZE-sizeof(BlockHeader); i++) data_block[i] = value;
-	data_block[BLOCK_SIZE-sizeof(BlockHeader)-1] = '\0';
+	char data_block[BLOCK_SIZE - sizeof(fileBlockIndex*) - sizeof(int)];
+	for(i = 0; i < (BLOCK_SIZE - sizeof(fileBlockIndex*) - sizeof(int)); i++) data_block[i] = value;
+	data_block[BLOCK_SIZE - sizeof(fileBlockIndex*) - sizeof(int)-1] = '\0';
 	strcpy(file_block->data, data_block);
 	return file_block;
 }
