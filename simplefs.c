@@ -8,7 +8,27 @@
 // initializes a file system on an already made disk
 // returns a handle to the top level directory stored in the first block
 DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
-	return NULL;
+	if(fs == NULL || disk == NULL) return NULL;			//A. innanzitutto controllo che fs e disk non siano vuoti
+	
+	FirstDirectoryBlock* first_directory_block = malloc(sizeof(FirstDirectoryBlock));
+	
+	int res = DiskDriver_readBlock(disk,first_directory_block,0);
+	if(res == -1){ 										//A. controllo che il blocco sia disponibile. Se non è disponibile, non possiamo andare avanti
+		free(first_directory_block);
+		return NULL;
+	};				
+	
+	fs->disk = disk;
+	
+	DirectoryHandle* directory_handle = (DirectoryHandle*)malloc(sizeof(DirectoryHandle));		//A. Il blocco è disponibile, quindi posso allocare la struttura
+	directory_handle->sfs = fs;
+	directory_handle->dcb = first_directory_block;
+	directory_handle->directory = NULL;
+	directory_handle->current_block = NULL;
+	directory_handle->pos_in_dir = 0;
+	directory_handle->pos_in_block = 0;
+	
+	return directory_handle;
 }
 
 // creates the inital structures, the top level directory
