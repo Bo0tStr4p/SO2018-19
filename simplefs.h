@@ -17,23 +17,19 @@ typedef struct {
 */
 
 
-//Usiamo questa struttura per memorizzare il nostro Blocco Index
-//per i file
-typedef struct {
-  struct fileBlockIndex* previous; 			//Memorizziamo il predecessore
-  //FileBlock blocks[MAX_BLOCKS];
-  void* blocks; 							//verrà castato a FileBlock blocks[MAX_BLOCKS]
-  struct fileBlockIndex* next; 				//Memorizziamo il successore
-} fileBlockIndex;
-
 //Usiamo questa struttura per memorizzare il nostro blocco Index 
-//per le directory
-typedef struct {
-  struct directoryBlockIndex* previous; 		//Memorizziamo il predecessore
-  //DirectoryBlock blocks[MAX_BLOCKS];
-  void* blocks;									//verrà castato a DirectoryBlock blocks[MAX_BLOCKS]
-  struct directoryBlockIndex* next; 			//Memorizziamo il successore
-} directoryBlockIndex;
+//Quando effettuiamo le operazioni di read e write sul disco passiamo semplicemente
+//un int come posizione all'interno del disco. Utilizzando un array di int andiamo
+//a memorizzare i blocchi da leggere nell'ordine in cui sono presenti all'interno 
+//dell'array
+typedef struct BlockIndex BlockIndex;
+
+struct BlockIndex{
+  BlockIndex* previous; 		//Memorizziamo il predecessore
+  int blocks[MAX_BLOCKS];	    //Inizialmente tutti vuoti, mettiamo tutto a -1
+  int first_position_free;       //Andiamo a memorizzare la posizione del primo blocco libero nell'array, se -1 dobbiamo fare un nuovo BlockIndex					
+  BlockIndex* next; 			//Memorizziamo il successore
+};
 
 // this is in the first block of a chain, after the header
 typedef struct {
@@ -52,33 +48,33 @@ typedef struct {
 
 /******************* stuff on disk BEGIN *******************/
 typedef struct {
-  fileBlockIndex index;
+  BlockIndex index;
   FileControlBlock fcb;
 } FirstFileBlock;
 
 // this is one of the next physical blocks of a file
 typedef struct {
-  fileBlockIndex* index;
+  BlockIndex* index;
   int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
-  char  data[BLOCK_SIZE - sizeof(fileBlockIndex*) - sizeof(int)];
+  char  data[BLOCK_SIZE - sizeof(BlockIndex*) - sizeof(int)];
 } FileBlock;
 
 // this is the first physical block of a directory
 typedef struct {
-  directoryBlockIndex index;
+  BlockIndex index;
   FileControlBlock fcb;
   int num_entries;
   int file_blocks[ (BLOCK_SIZE
-		   -sizeof(directoryBlockIndex)
+		   -sizeof(BlockIndex)
 		   -sizeof(FileControlBlock)
 		    -sizeof(int))/sizeof(int) ];
 } FirstDirectoryBlock;
 
 // this is remainder block of a directory
 typedef struct {
-  directoryBlockIndex* index;
+  BlockIndex* index;
   int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
-  int file_blocks[ (BLOCK_SIZE-sizeof(directoryBlockIndex*)-sizeof(int))/sizeof(int) ];
+  int file_blocks[ (BLOCK_SIZE-sizeof(BlockIndex*)-sizeof(int))/sizeof(int) ];
 } DirectoryBlock;
 /******************* stuff on disk END *******************/
 
