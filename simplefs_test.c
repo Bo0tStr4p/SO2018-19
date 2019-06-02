@@ -23,7 +23,7 @@ int main(int agc, char** argv) {
 	
 	DirectoryHandle* directory_handle_1 = SimpleFS_init(simple_fs_1,disk_1);
 	
-	printf("directory_handle->pos_in_dir:%i\n",directory_handle_1->pos_in_dir);
+	//printf("directory_handle->pos_in_dir:%i\n",directory_handle_1->pos_in_dir);
 	
 	printf("FirstBlock size %ld\n", sizeof(FirstFileBlock));
 	printf("DataBlock size %ld\n", sizeof(FileBlock));
