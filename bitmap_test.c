@@ -48,7 +48,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap1 - Block:5 - Status:%i | Expected: -1 (Full)\n", status15);
+	printf("bitmap1 - Block:5 - Status:%i | Expected: 1 (Full)\n", status15);
 	
 	int status19;
 	status19 = BitMap_is_free_block(&bitmap1,9);
@@ -72,7 +72,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap1 - Block:21 - Status:%i | Expected: -1 (Full)\n", status121);
+	printf("bitmap1 - Block:21 - Status:%i | Expected: 1 (Full)\n", status121);
 	
 	int status132;
 	status132 = BitMap_is_free_block(&bitmap1,32);
@@ -88,7 +88,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap1 - Block:45 - Status:%i | Expected: -1 (Full)\n", status145);
+	printf("bitmap1 - Block:45 - Status:%i | Expected: 1 (Full)\n", status145);
 	
 	int status152;
 	status152 = BitMap_is_free_block(&bitmap1,52);
@@ -96,7 +96,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap1 - Block:52 - Status:%i | Expected: -1 (Full)\n", status152);
+	printf("bitmap1 - Block:52 - Status:%i | Expected: 1 (Full)\n", status152);
 	
 	int status159;
 	status159 = BitMap_is_free_block(&bitmap1,59);
@@ -122,7 +122,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:0 - Status:%i | Expected: -1 (Full)\n", status20);
+	printf("bitmap2 - Block:0 - Status:%i | Expected: 1 (Full)\n", status20);
 	
 	int status25;
 	status25 = BitMap_is_free_block(&bitmap2,5);
@@ -130,7 +130,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:5 - Status:%i | Expected: -1 (Full)\n", status25);
+	printf("bitmap2 - Block:5 - Status:%i | Expected: 1 (Full)\n", status25);
 	
 	int status29;
 	status29 = BitMap_is_free_block(&bitmap2,9);
@@ -154,7 +154,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:21 - Status:%i | Expected: -1 (Full)\n", status221);
+	printf("bitmap2 - Block:21 - Status:%i | Expected: 1 (Full)\n", status221);
 	
 	int status232;
 	status232 = BitMap_is_free_block(&bitmap2,32);
@@ -162,7 +162,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:39 - Status:%i | Expected: -1(Full)\n", status232);
+	printf("bitmap2 - Block:39 - Status:%i | Expected: 1 (Full)\n", status232);
 	
 	int status245;
 	status245 = BitMap_is_free_block(&bitmap2,45);
@@ -170,7 +170,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:45 - Status:%i | Expected: -1 (Full)\n", status245);
+	printf("bitmap2 - Block:45 - Status:%i | Expected: 1 (Full)\n", status245);
 	
 	int status252;
 	status252 = BitMap_is_free_block(&bitmap2,52);
@@ -178,7 +178,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: wrong status\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:52 - Status:%i | Expected: -1 (Full)\n", status252);
+	printf("bitmap2 - Block:52 - Status:%i | Expected: 1 (Full)\n", status252);
 	
 	int status259;
 	status259 = BitMap_is_free_block(&bitmap2,59);
@@ -460,7 +460,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: BitMap_set failed\n");
 		return -1;
 	}
-	printf("bitmap1 - Block:0 - Status:%i | Expected: -1 (Full)\n\n", get1);
+	printf("bitmap1 - Block:0 - Status:%i | Expected: 1 (Full)\n\n", get1);
 	
 	printf("Setting bit at pos: %i with status: %i in bitmap1\n", 5, 0);
 	BitMap_set(&bitmap1,5,0);
@@ -480,7 +480,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: BitMap_set failed\n");
 		return -1;
 	}
-	printf("bitmap1 - Block:9 - Status:%i | Expected: -1 (Full)\n\n", get3);
+	printf("bitmap1 - Block:9 - Status:%i | Expected: 1 (Full)\n\n", get3);
 	
 	printf("Setting bit at pos: %i with status: %i in bitmap1\n", 21, 0);
 	BitMap_set(&bitmap1,21,0);
@@ -511,7 +511,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: BitMap_set failed\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:0 - Status:%i | Expected: -1 (Full)\n\n", get6);
+	printf("bitmap2 - Block:0 - Status:%i | Expected: 1 (Full)\n\n", get6);
 	
 	printf("Setting bit at pos: %i with status: %i in bitmap1\n", 5, 0);
 	BitMap_set(&bitmap2,5,0);
@@ -541,7 +541,7 @@ int main(int agc, char** argv) { 					//A. Main di prova per testare le funzioni
 		fprintf(stderr, "Error: BitMap_set failed\n");
 		return -1;
 	}
-	printf("bitmap2 - Block:34 - Status:%i | Expected: -1 (Full)\n\n", get9);
+	printf("bitmap2 - Block:34 - Status:%i | Expected: 1 (Full)\n\n", get9);
 	
 	printf("Setting bit at pos: %i with status: %i in bitmap1\n", 45, 0);
 	BitMap_set(&bitmap2,45,0);

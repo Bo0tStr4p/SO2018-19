@@ -66,8 +66,7 @@ int BitMap_is_free_block(BitMap* bmap, int block_num){
 	
 	int bit = bmap->entries[index] >> key.bit_num & 0x01;		//A. identifico il bit			
 	
-	//if(bit == 0) return 0; else return 1;						//A. se il blocco è libero restituisce 0, altrimenti 1
-	return bit;
+	if(bit == 0) return 0; else return 1;						//A. se il blocco è libero restituisce 0, altrimenti 1
 }
 
 void BitMap_print(BitMap* bmap){
