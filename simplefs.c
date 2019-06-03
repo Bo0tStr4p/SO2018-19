@@ -82,6 +82,23 @@ void SimpleFS_format(SimpleFS* fs){
 // returns null on error (file existing, no free blocks)
 // an empty file consists only of a block of type FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
+	if(d == NULL || filename == NULL){ 
+		printf("Errore nella create file: inseriti prametri non corretti")
+		return NULL;
+	}
+	
+	//A. Innanzitutto devo controllare che il file non sia già presente sul disco. Prima ci sono dei controlli
+	SimpleFS* fs = d->sfs;
+	DiskDriver* disk = fs->disk;                   
+	FirstDirectoryBlock* fdb = d->dcb;
+	if(fs == NULL || disk == NULL || fdcb == NULL){ 
+		printf("Errore nella create file: la DirectoryHandle non è allocata bene");
+		return NULL;
+	}       
+	
+	if(fdb->num_entries < 1) return NULL;
+	//TODO
+	
 	return NULL;
 }
 
