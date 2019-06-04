@@ -23,13 +23,13 @@ FileBlock* create_file_block(char value){
 		return NULL;
 	}
 	//R. Valori casuali
-	file_block->index = NULL;
+	file_block->index_block = 0;
 	file_block->position = 0;
 	
 	//R. Scrivo dei valori per riempire i blocchi
-	char data_block[BLOCK_SIZE - sizeof(BlockIndex*) - sizeof(int)];
-	for(i = 0; i < (BLOCK_SIZE - sizeof(BlockIndex*) - sizeof(int)); i++) data_block[i] = value;
-	data_block[BLOCK_SIZE - sizeof(BlockIndex*) - sizeof(int)-1] = '\0';
+	char data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)];
+	for(i = 0; i < (BLOCK_SIZE - sizeof(int) - sizeof(int)); i++) data_block[i] = value;
+	data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)-1] = '\0';
 	strcpy(file_block->data, data_block);
 	return file_block;
 }
