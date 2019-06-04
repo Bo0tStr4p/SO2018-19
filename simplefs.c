@@ -44,9 +44,9 @@ void SimpleFS_format(SimpleFS* fs){
 	
 	//A. Creiamo le strutture iniziali
 	FirstDirectoryBlock* root_directory = malloc(sizeof(FirstDirectoryBlock)); 				//A. Top Level Directory
-	root_directory->index.previous = NULL;					//A. Ci troviamo nel primo blocco index, non ci sono predecessori 
+	root_directory->index.previous = -1;					//A. Ci troviamo nel primo blocco index, non ci sono predecessori 
 	root_directory->index.first_position_free = 0;			//A. imposto che il primo index libero nell'array degli index è 0
-	root_directory->index.next = NULL;						//A. Essendo appena inizializzato, ancora non c'è un successivo blocco index, quello corrente non è pieno
+	root_directory->index.next = -1;						//A. Essendo appena inizializzato, ancora non c'è un successivo blocco index, quello corrente non è pieno
 	
 	int i;
 	for(i=0; i<MAX_BLOCKS; i++){
@@ -59,10 +59,6 @@ void SimpleFS_format(SimpleFS* fs){
 	strcpy(root_directory->fcb.name, "/"); 					//A. il suo nome è "/"
 	
 	root_directory->num_entries = 0;
-	int num_file_blocks = (BLOCK_SIZE-sizeof(BlockIndex)-sizeof(FileControlBlock)-sizeof(int))/sizeof(int);
-	for(i=0; i<num_file_blocks; i++){
-		root_directory->file_blocks[i] = -1;
-	} 
 	
 	//A. puliamo la bitmap dei blocchi occupati nel disco
 	fs->disk->header->free_blocks = fs->disk->header->num_blocks;	//A. il numero dei blocchi liberi è uguale a quello dei blocchi totali sul disco. Cioè il disco è vuoto
@@ -83,7 +79,7 @@ void SimpleFS_format(SimpleFS* fs){
 // an empty file consists only of a block of type FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	if(d == NULL || filename == NULL){ 
-		printf("Errore nella create file: inseriti prametri non corretti")
+		fprintf(stderr,"Errore nella create file: inseriti prametri non corretti\n");
 		return NULL;
 	}
 	
@@ -91,8 +87,8 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	SimpleFS* fs = d->sfs;
 	DiskDriver* disk = fs->disk;                   
 	FirstDirectoryBlock* fdb = d->dcb;
-	if(fs == NULL || disk == NULL || fdcb == NULL){ 
-		printf("Errore nella create file: la DirectoryHandle non è allocata bene");
+	if(fs == NULL || disk == NULL || fdb == NULL){ 
+		fprintf(stderr,"Errore nella create file: la DirectoryHandle non è allocata bene\n");
 		return NULL;
 	}       
 	
@@ -131,7 +127,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 // returns the number of bytes read
 int SimpleFS_read(FileHandle* f, void* data, int size){
 	FirstFileBlock* first_file = f->fcb; //R. Estraggo il FirstFileBlock
-	BlockIndex* index = first_file->index; //R. Estraggo il mio blocco index
+	//BlockIndex* index = first_file->index; //R. Estraggo il mio blocco index
 	
 	int off = f->pos_in_file;															
 	int written_bytes = first_file->fcb.size_in_bytes;													
@@ -144,7 +140,7 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 	
 	//R. Costruire il sistema di lettura che calcola la posizione in cui si trova il
 	//FileHandle e legge tutti i blocchi successivi, salvandoli in void* data
-	
+	return 0;
 }
 
 // returns the number of bytes read (moving the current pointer to pos)
@@ -180,12 +176,13 @@ int SimpleFS_remove(SimpleFS* fs, char* filename){
 
 //R. Funzione per ottenere il blocco successivo
 static int get_next_block_file(FileHandle* f){
+	/*
 	BlockIndex* index = f->current_block->index; //R. Estraggo index
 	int current_position = f->current_block->position; //R. posizione nell'array index
 	 
 	//R. Caso in cui devo andare nel blocco index successivo
 	if(current_position + 1 == MAX_BLOCKS){
-		BlockIndex* next = f->current_block->index->next;
+		BlockIndex* next = f->current_block->index.next;
 		if(next == NULL){
 			fprintf(stderr,"Error in next block file\n");
 			return -1;
@@ -196,7 +193,8 @@ static int get_next_block_file(FileHandle* f){
 	//R. Caso in cui mi trovo ancora nello stesso blocco index
 	//TODO
 	return 0;
-	}
+	}*/
+	return 0;
 }
 
 
