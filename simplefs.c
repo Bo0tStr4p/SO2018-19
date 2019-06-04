@@ -126,11 +126,25 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 	return 0;
 }
 
-// writes in the file, at current position size bytes stored in data
+// reads in the file, at current position size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes read
 int SimpleFS_read(FileHandle* f, void* data, int size){
-	return 0;
+	FirstFileBlock* first_file = f->fcb; //R. Estraggo il FirstFileBlock
+	BlockIndex* index = first_file->index; //R. Estraggo il mio blocco index
+	
+	int off = f->pos_in_file;															
+	int written_bytes = first_file->fcb.size_in_bytes;													
+	
+	//R. Controllo che la parte da leggere non vada oltre ciò che si trova nel file
+	if(size+off > written_bytes){																
+		fprintf(stderr,"Could not read, size+off > written_bytes\n");
+		return -1;
+	}
+	
+	//R. Costruire il sistema di lettura che calcola la posizione in cui si trova il
+	//FileHandle e legge tutti i blocchi successivi, salvandoli in void* data
+	
 }
 
 // returns the number of bytes read (moving the current pointer to pos)
@@ -159,6 +173,30 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 // if a directory, it removes recursively all contained files
 int SimpleFS_remove(SimpleFS* fs, char* filename){
 	return 0;
+}
+
+
+//R. Ulteriori Funzioni
+
+//R. Funzione per ottenere il blocco successivo
+static int get_next_block_file(FileHandle* f){
+	BlockIndex* index = f->current_block->index; //R. Estraggo index
+	int current_position = f->current_block->position; //R. posizione nell'array index
+	 
+	//R. Caso in cui devo andare nel blocco index successivo
+	if(current_position + 1 == MAX_BLOCKS){
+		BlockIndex* next = f->current_block->index->next;
+		if(next == NULL){
+			fprintf(stderr,"Error in next block file\n");
+			return -1;
+		}
+		return next->blocks[0];
+	}
+	else{
+	//R. Caso in cui mi trovo ancora nello stesso blocco index
+	//TODO
+	return 0;
+	}
 }
 
 
