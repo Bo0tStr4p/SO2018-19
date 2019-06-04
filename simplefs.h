@@ -25,10 +25,10 @@ typedef struct {
 typedef struct BlockIndex BlockIndex;
 
 struct BlockIndex{
-  BlockIndex* previous; 		//Memorizziamo il predecessore
+  int previous; 		//Memorizziamo il predecessore
   int blocks[MAX_BLOCKS];	    //Inizialmente tutti vuoti, mettiamo tutto a -1
   int first_position_free;       //Andiamo a memorizzare la posizione del primo blocco libero nell'array, se -1 dobbiamo fare un nuovo BlockIndex					
-  BlockIndex* next; 			//Memorizziamo il successore
+  int next; 			//Memorizziamo il successore
 };
 
 // this is in the first block of a chain, after the header
@@ -54,9 +54,9 @@ typedef struct {
 
 // this is one of the next physical blocks of a file
 typedef struct {
-  BlockIndex* index;
+  int index_block;
   int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
-  char  data[BLOCK_SIZE - sizeof(BlockIndex*) - sizeof(int)];
+  char  data[BLOCK_SIZE - sizeof(int) - sizeof(int)];
 } FileBlock;
 
 // this is the first physical block of a directory
@@ -72,9 +72,9 @@ typedef struct {
 
 // this is remainder block of a directory
 typedef struct {
-  BlockIndex* index;
+  int index_block;
   int position; //Usiamo questo valore quando torniamo al blocco index per spostarci
-  int file_blocks[ (BLOCK_SIZE-sizeof(BlockIndex*)-sizeof(int))/sizeof(int) ];
+  int file_blocks[ (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int) ];
 } DirectoryBlock;
 /******************* stuff on disk END *******************/
 
