@@ -174,27 +174,53 @@ int SimpleFS_remove(SimpleFS* fs, char* filename){
 
 //R. Ulteriori Funzioni
 
-//R. Funzione per ottenere il blocco successivo
-static int get_next_block_file(FileHandle* f){
-	/*
-	BlockIndex* index = f->current_block->index; //R. Estraggo index
-	int current_position = f->current_block->position; //R. posizione nell'array index
+//R. Funzione per ottenere il blocco index da un file
+static BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
+	BlockIndex* index = NULL;
+	if(DiskDriver_readBlock(disk, index, file->index_block) == -1){
+			fprintf(stderr,"Errore nella get next block file\n");
+			return NULL;
+		}
+	return index;
+}
+
+//R. Funzione che restituisce il blocco successivo file
+static FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
+	BlockIndex* index = get_block_index_file(file,disk); //R. Estraggo il blocco index
+	if(index == NULL){
+		fprintf(stderr,"Error in get netx block file\n");
+		return NULL;
+	}
+	
+	int current_position = file->position; //R. posizione nell'array index
 	 
 	//R. Caso in cui devo andare nel blocco index successivo
 	if(current_position + 1 == MAX_BLOCKS){
-		BlockIndex* next = f->current_block->index.next;
-		if(next == NULL){
-			fprintf(stderr,"Error in next block file\n");
-			return -1;
+		if(index->next == -1){
+			fprintf(stderr,"Error in get next block file\n");
+			return NULL;
 		}
-		return next->blocks[0];
+		BlockIndex* next = NULL;
+		if(DiskDriver_readBlock(disk, next, index->next) == -1){
+			fprintf(stderr,"Errore nella get next block file\n");
+			return NULL;
+		}
+		FileBlock* next_file = NULL;
+		if(DiskDriver_readBlock(disk, next_file, next->blocks[0]) == -1){
+			fprintf(stderr,"Errore nella get next block file\n");
+			return NULL;
+		}
+		return next_file;
 	}
 	else{
 	//R. Caso in cui mi trovo ancora nello stesso blocco index
-	//TODO
-	return 0;
-	}*/
-	return 0;
+	FileBlock* next_file = NULL;
+	if(DiskDriver_readBlock(disk, next_file, index->blocks[current_position + 1]) == -1){
+			fprintf(stderr,"Errore nella get next block file\n");
+			return NULL;
+		}
+	return next_file;
+	}
 }
 
 
