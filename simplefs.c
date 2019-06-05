@@ -205,7 +205,7 @@ static BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriv
 static FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	BlockIndex* index = get_block_index_file(file,disk); //R. Estraggo il blocco index
 	if(index == NULL){
-		fprintf(stderr,"Error in get netx block file\n");
+		fprintf(stderr,"Error in get next block file\n");
 		return NULL;
 	}
 	
@@ -240,5 +240,42 @@ static FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	}
 }
 
-
+//A. Funzione che restituisce il blocco successivo directory
+static FileBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk){
+	BlockIndex* index = get_block_index_directory(directory,disk); //R. Estraggo il blocco index
+	if(index == NULL){
+		fprintf(stderr,"Errore nella get next block directory\n");
+		return NULL;
+	}
+	
+	int current_position = directory->position; //A. posizione nell'array index
+	 
+	//A. Caso in cui devo andare nel blocco index successivo
+	if(current_position + 1 == MAX_BLOCKS){
+		if(index->next == -1){
+			fprintf(stderr,"Error in get next block directory\n");
+			return NULL;
+		}
+		BlockIndex* next = NULL;
+		if(DiskDriver_readBlock(disk, next, index->next) == -1){
+			fprintf(stderr,"Errore nella get next block directory\n");
+			return NULL;
+		}
+		FileBlock* next_directory = NULL;
+		if(DiskDriver_readBlock(disk, next_directory, next->blocks[0]) == -1){
+			fprintf(stderr,"Errore nella get next block directory\n");
+			return NULL;
+		}
+		return next_directory;
+	}
+	else{
+	//A. Caso in cui mi trovo ancora nello stesso blocco index
+	DirectoryBlock* next_directory = NULL;
+	if(DiskDriver_readBlock(disk, next_directory, index->blocks[current_position + 1]) == -1){
+			fprintf(stderr,"Errore nella get next block directory\n");
+			return NULL;
+		}
+	return next_directory;
+	}
+}
   
