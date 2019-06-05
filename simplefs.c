@@ -191,6 +191,16 @@ static BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 	return index;
 }
 
+//A. Funzione per ottenere il blocco index da una directory
+static BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk){
+	BlockIndex* index = NULL;
+	if(DiskDriver_readBlock(disk, index, directory->index_block) == -1){
+			fprintf(stderr,"Errore nella get next block file\n");
+			return NULL;
+		}
+	return index;
+}
+
 //R. Funzione che restituisce il blocco successivo file
 static FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	BlockIndex* index = get_block_index_file(file,disk); //R. Estraggo il blocco index
