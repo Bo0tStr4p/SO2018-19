@@ -147,7 +147,14 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 // returns pos on success
 // -1 on error (file too short)
 int SimpleFS_seek(FileHandle* f, int pos){
-	return 0;
+	FirstFileBlock* first_file = f->fcb;
+	//R. Stiamo provando a leggere uno spazio maggiore di quello disponibile
+	if(pos > first_file->fcb.written_bytes){ 
+		fprintf(stderr,"Error: simpleFS_seek\n");
+		return -1;
+	}
+	f->pos_in_file = pos;
+	return pos;
 }
 
 // seeks for a directory in d. If dirname is equal to ".." it goes one level up
