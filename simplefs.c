@@ -43,22 +43,22 @@ void SimpleFS_format(SimpleFS* fs){
 	if(fs == NULL) return;
 	
 	//A. Creiamo le strutture iniziali
-	FirstDirectoryBlock* root_directory = malloc(sizeof(FirstDirectoryBlock)); 				//A. Top Level Directory
-	root_directory->index.previous = -1;					//A. Ci troviamo nel primo blocco index, non ci sono predecessori 
-	root_directory->index.first_position_free = 0;			//A. imposto che il primo index libero nell'array degli index è 0
-	root_directory->index.next = -1;						//A. Essendo appena inizializzato, ancora non c'è un successivo blocco index, quello corrente non è pieno
+	FirstDirectoryBlock root_directory = {}; 				//A. Top Level Directory
+	root_directory.index.previous = -1;					//A. Ci troviamo nel primo blocco index, non ci sono predecessori 
+	root_directory.index.first_position_free = 0;			//A. imposto che il primo index libero nell'array degli index è 0
+	root_directory.index.next = -1;						//A. Essendo appena inizializzato, ancora non c'è un successivo blocco index, quello corrente non è pieno
 	
 	int i;
 	for(i=0; i<MAX_BLOCKS; i++){
-		root_directory->index.blocks[i] = -1;				//A. tutti i blocchi vuoti settati a -1
+		root_directory.index.blocks[i] = -1;				//A. tutti i blocchi vuoti settati a -1
 	}
 	
-	root_directory->fcb.directory_block = -1; 				//A. root non ha genitori
-	root_directory->fcb.block_in_disk = 0;					//A. root ha il primo blocco nel disco
-	root_directory->fcb.is_dir = 1; 							//A. è una directory
-	strcpy(root_directory->fcb.name, "/"); 					//A. il suo nome è "/"
+	root_directory.fcb.directory_block = -1; 				//A. root non ha genitori
+	root_directory.fcb.block_in_disk = 0;					//A. root ha il primo blocco nel disco
+	root_directory.fcb.is_dir = 1; 							//A. è una directory
+	strcpy(root_directory.fcb.name, "/"); 					//A. il suo nome è "/"
 	
-	root_directory->num_entries = 0;
+	root_directory.num_entries = 0;
 	
 	//A. puliamo la bitmap dei blocchi occupati nel disco
 	fs->disk->header->free_blocks = fs->disk->header->num_blocks;	//A. il numero dei blocchi liberi è uguale a quello dei blocchi totali sul disco. Cioè il disco è vuoto
@@ -66,10 +66,10 @@ void SimpleFS_format(SimpleFS* fs){
 	int bitmap_size = fs->disk->header->bitmap_entries; 			//A. numero di blocchi della bitmap
 	memset(fs->disk->bitmap_data,'\0', bitmap_size); 				//A. mappo con 0 (blocco libero) l'array bitmap_data
 	
-	int ret = DiskDriver_writeBlock(fs->disk, root_directory, 0);		//A. vado a scrivere sul disco la root directory
+	int ret = DiskDriver_writeBlock(fs->disk, &root_directory, 0);		//A. vado a scrivere sul disco la root directory
 	if (ret == -1){
-		printf("Error: impossibile formattare\n");
-		free(root_directory);
+		fprintf(stderr, "Errore nella format: impossibile formattare\n");
+		//free(root_directory);
 	}
 	return;
 }
