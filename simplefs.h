@@ -25,10 +25,10 @@ typedef struct {
 typedef struct BlockIndex BlockIndex;
 
 struct BlockIndex{
-  int previous; 		//Memorizziamo il predecessore
+  int previous; 				//Memorizziamo il predecessore
   int blocks[MAX_BLOCKS];	    //Inizialmente tutti vuoti, mettiamo tutto a -1
-  int first_position_free;       //Andiamo a memorizzare la posizione del primo blocco libero nell'array, se -1 dobbiamo fare un nuovo BlockIndex					
-  int next; 			//Memorizziamo il successore
+  int first_position_free;      //Andiamo a memorizzare la posizione del primo blocco libero nell'array, se -1 dobbiamo fare un nuovo BlockIndex					
+  int next; 					//Memorizziamo il successore
 };
 
 // this is in the first block of a chain, after the header
@@ -36,6 +36,7 @@ typedef struct {
   int directory_block; // first block of the parent directory
   int block_in_disk;   // repeated position of the block on the disk
   char name[128];
+  int written_bytes;   // Usata per memorizzare i byte effettivi all'interno di tutti i file blocks
   int  size_in_bytes;
   int size_in_blocks;
   int is_dir;          // 0 for file, 1 for dir
