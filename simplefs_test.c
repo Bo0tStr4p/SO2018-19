@@ -32,7 +32,6 @@ int main(int agc, char** argv) {
 	
 	//A. print di prova, poi andranno tolte e/o sistemate
 	printf("directory_handle->pos_in_dir:%i\n",directory_handle_1->pos_in_dir);
-	printf("directory_handle_1->dcb->index.first_position_free:%d\n",directory_handle_1->dcb->index.first_position_free);
 	
 	printf("\n");
 	printf("FirstBlock size %ld\n", sizeof(FirstFileBlock));
