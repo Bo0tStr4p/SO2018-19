@@ -166,6 +166,56 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
     return 0;
 }
 
+// writes a block in position block_num, returns -1 if operation not possible
+int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num){
+	 if(block_num >= disk->header->bitmap_blocks || block_num < 0 || src == NULL || disk == NULL ){
+		fprintf(stderr,"Error: could not start with write block. Bad parameters \n");
+        return -1;
+	}
+	
+	//R. Vado ad aggiornare al disco i blocchi libero
+    if(block_num == disk->header->first_free_block)																
+	    disk->header->first_free_block = DiskDriver_getFreeBlock(disk, block_num+1);
+	   
+	disk->header->free_blocks -=1;
+	
+    /* Versione con memcpy non funziona
+    //R. Vado a calcolare la posizione in cui devo iniziare la scrittura del blocco nel disco
+    int position = sizeof(DiskHeader)+(disk->header->bitmap_entries)+(block_num*BLOCK_SIZE);
+    //R. Posiziono il puntatore alla posizione in cui devo iniziare la scrittura del blocco nel disco
+    void* writePosition = disk->bitmap_data + disk->header->bitmap_entries + (block_num * BLOCK_SIZE);
+    //R. Sfrutto memcpy per copiare la memoria del blocco che voglio scrivere all'interno del blocco del disco
+    memcpy(writePosition, src, BLOCK_SIZE);
+    */
+    
+    //R. Estraggo il FileDescriptor
+    int fd = disk->fd;
+    
+    //R. Vado a spostare il FileDescriptor nella posizione iniziale in cui devo iniziare a scrivere
+	off_t offset = lseek(fd, sizeof(DiskHeader)+disk->header->bitmap_entries+(block_num*BLOCK_SIZE), SEEK_SET);	
+	if(offset == -1){
+		fprintf(stderr,"Error: lseek");
+		return -1;
+	}
+		
+	//R. Classica funzione di scrittura con il file descriptor
+	int ret, written_bytes = 0;
+	while(written_bytes < BLOCK_SIZE){																		
+		if((ret = write(fd, src + written_bytes, BLOCK_SIZE - written_bytes)) == -1){
+			if(errno == EINTR) 
+				continue;
+			else{
+				fprintf(stderr,"Error: write\n");
+				return -1;
+			}
+		}
+			
+		written_bytes += ret;						
+	}
+
+    return 0;
+}
+
 // writes a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
 int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
