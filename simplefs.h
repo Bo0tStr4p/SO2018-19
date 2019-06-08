@@ -26,8 +26,7 @@ typedef struct BlockIndex BlockIndex;
 
 struct BlockIndex{
   int previous; 				//Memorizziamo il predecessore
-  int blocks[MAX_BLOCKS];	    //Inizialmente tutti vuoti, mettiamo tutto a -1
-  int first_position_free;      //Andiamo a memorizzare la posizione del primo blocco libero nell'array, se -1 dobbiamo fare un nuovo BlockIndex					
+  int blocks[MAX_BLOCKS];	    //Inizialmente tutti vuoti, mettiamo tutto a -1					
   int next; 					//Memorizziamo il successore
 };
 
@@ -162,6 +161,9 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname);
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
 int SimpleFS_remove(SimpleFS* fs, char* filename);
+
+// Funzione per creare un nuovo blocco di tipo index
+BlockIndex create_block_index(int previous);
 
 
   
