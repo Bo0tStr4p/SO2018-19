@@ -385,4 +385,94 @@ static int create_next_file_block(FileBlock* current_block, FileBlock* new, Disk
 	}
 
 }
+
+
+//A. Funzione per creare un nuovo directory block collegandolo con il blocco index di riferimento.
+static int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk){
+	int current_position_in_index = current_block -> position;
+	
+	//A. Caso in cui devo creare un nuovo blocco index e collegarlo
+	if(current_position_in_index + 1 == MAX_BLOCKS){	
+		
+		BlockIndex* index = get_block_index_directory(current_block,disk); 
+		if(index == NULL){
+			fprintf(stderr,"Error: create_next_directory_block, get index block\n");
+			return -1;
+		}
+		
+		//A. Ottengo il nuovo blocco libero per index
+		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
+		if(new_index_block == -1){
+			fprintf(stderr,"Error: create_next_directory_block, get free block\n");
+			return -1;
+		}
+		
+		//A. Ottengo il nuovo blocco libero per blocco
+		int block_return = DiskDriver_getFreeBlock(disk, new_index_block);
+		if(block_return == -1){
+			fprintf(stderr,"Error: create_next_directory_block, get free block\n");
+			return -1;
+		}
+		
+		int index_block = current_block -> index_block; 
+		
+		//A. Aggiorno il vecchio blocco index e lo riscrivo sul disco
+		index->next = new_index_block;
+		if(DiskDriver_updateBlock(disk, index, index_block) == -1){
+			fprintf(stderr,"Error: create_next_directory_block, update index block\n");
+			return -1;
+		}
+		
+		//A. Creo il nuovo blocco index, lo aggiorno e lo scrivo sul blocco
+		BlockIndex new_index = create_block_index(index_block);
+		new_index.blocks[0] = block_return;
+		if(DiskDriver_writeBlock(disk, &new_index, new_index_block) == -1){
+			fprintf(stderr,"Error: create_next_directory_block, write new index block\n");
+			return -1;
+		}
+		
+		//A. Si Inizializza il nuovo blocco
+		DirectoryBlock new_block;
+		new_block.index_block = index_block;
+		new_block.position = 0;
+		new = &new_block; 
+		
+		return block_return;
+		
+	}
+	else{
+		
+		//A. Caso in cui posso utilizzare il blocco index corrente
+		BlockIndex* index = get_block_index_file(current_block,disk); 
+		if(index == NULL){
+			fprintf(stderr,"Error: create_next_directory_block, get index block\n");
+			return -1;
+		}
+		
+		int index_block = current_block -> index_block; 
+		
+		//A. Inizializzo il nuovo blocco
+		DirectoryBlock new_block;
+		new_block.index_block = index_block;
+		new_block.position = current_position_in_index + 1;
+		new = &new_block; 
+		
+		//A. Ottengo il nuovo blocco libero
+		int block_return = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
+		if(block_return == -1){
+			fprintf(stderr,"Error: create_next_directory_block, get free block\n");
+			return -1;
+		}
+		
+		//A. Aggiorno il blocco index e lo riscrivo sul disco
+		index->blocks[new_block.position] = block_return;
+		if(DiskDriver_updateBlock(disk, index, index_block) == -1){
+			fprintf(stderr,"Error:create_next_directory_block, update index block\n");
+			return -1;
+		}
+		
+		return block_return;
+	}
+
+}
   
