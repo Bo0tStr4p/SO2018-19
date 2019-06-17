@@ -208,7 +208,7 @@ static BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 static BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk){
 	BlockIndex* index = NULL;
 	if(DiskDriver_readBlock(disk, index, directory->index_block) == -1){
-			fprintf(stderr,"Errore nella get next block file\n");
+			fprintf(stderr,"Errore nella get block index directory\n");
 			return NULL;
 		}
 	return index;
