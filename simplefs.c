@@ -91,10 +91,51 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 		return NULL;
 	}       
 	
-	if(fdb->num_entries < 1) return NULL;
-	//TODO
+	//A. Prendiamo dal disco il primo blocco libero
+	int new_block = DiskDriver_getFreeBlock(disk,disk->header->first_free_block);
+	if(new_block == -1){
+		fprintf(stderr, "Errore nella createFile: non ci sono blocchi liberi sul disco\n");
+		return NULL;	//A. se non ci sono blocchi liberi sul disco interrompiamo
+	}
 	
-	return NULL;
+	//A. creiamo il primo blocco del file
+	FirstFileBlock* newfile = malloc(sizeof(FirstFileBlock));   
+	newfile->index.previous = -1;
+	newfile->index.next = -1;
+	
+	newfile->fcb.directory_block = fdb->fcb.block_in_disk;
+	newfile->fcb.block_in_disk = new_block; 					//A. gli assegno il blocco libero sul disco ottenuto dalla getFreeBlock
+	strcpy(newfile->fcb.name,filename);
+	newfile->fcb.written_bytes = 0;
+	newfile->fcb.size_in_bytes = 0;
+	newfile->fcb.size_in_blocks = 0;
+	newfile->fcb.is_dir = 0;
+	
+	//A. aggiorniamo lo spazio nella directory
+	fdb->file_blocks[fdb->num_entries] = new_block;
+	fdb->num_entries++;
+	
+	//A. Scriviamo su disco il file
+	int ret;
+	ret = DiskDriver_writeBlock(disk,newfile,new_block);
+	if(ret == -1){
+		fprintf(stderr, "Errore nella createFile: impossibile scrivere sul disco");
+		return NULL;
+	}
+	
+	FileBlock* file_block = malloc(sizeof(FileBlock));
+	file_block->index_block = 0;
+	file_block->position = 0;
+	//file_block->data = NULL;
+	
+	FileHandle* file_handle = malloc(sizeof(FileHandle));
+	file_handle->sfs = d->sfs;
+	file_handle->fcb = newfile;
+	file_handle->directory = fdb;
+	file_handle->current_block = file_block;
+	file_handle->pos_in_file = 0;
+	
+	return file_handle;
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
