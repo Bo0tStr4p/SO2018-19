@@ -162,9 +162,35 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname);
 // if a directory, it removes recursively all contained files
 int SimpleFS_remove(SimpleFS* fs, char* filename);
 
+
+// Funzioni aggiuntive
+
+
 // Funzione per creare un nuovo blocco di tipo index
 BlockIndex create_block_index(int previous);
 
+// Funzione per ottenere il blocco index da un file
+BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk);
+
+// Funzione per ottenere il blocco index da una directory
+BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk);
+
+// Funzione che restituisce il blocco successivo file
+FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk);
+
+// Funzione che restituisce il blocco successivo directory
+DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk);
+
+//   Funzione per creare un nuovo file blocks collegandolo con il blocco index di riferimento.
+//   Restituisce il numero del blocco del disk driver su cui fare update, in caso di errore -1.
+//   Utile soprattutto in casi di scrittura.
+//   In FileBlock* new andiamo a restituire il blocco, il quale verrà riempito con le informazioni
+//   e successivamente scritto nel disco (tramite writeBlock) nel int restituito dalla funzione.
+
+int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver* disk);
+
+// Funzione per creare un nuovo directory block collegandolo con il blocco index di riferimento.
+int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk);
 
   
 

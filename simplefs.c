@@ -236,7 +236,7 @@ BlockIndex create_block_index(int previous){
 }
 
 //R. Funzione per ottenere il blocco index da un file
-static BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
+BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 	BlockIndex* index = NULL;
 	if(DiskDriver_readBlock(disk, index, file->index_block) == -1){
 			fprintf(stderr,"Errore nella get next block file\n");
@@ -246,7 +246,7 @@ static BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 }
 
 //A. Funzione per ottenere il blocco index da una directory
-static BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk){
+BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk){
 	BlockIndex* index = NULL;
 	if(DiskDriver_readBlock(disk, index, directory->index_block) == -1){
 			fprintf(stderr,"Errore nella get block index directory\n");
@@ -256,7 +256,7 @@ static BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriv
 }
 
 //R. Funzione che restituisce il blocco successivo file
-static FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
+FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	BlockIndex* index = get_block_index_file(file,disk); //R. Estraggo il blocco index
 	if(index == NULL){
 		fprintf(stderr,"Error in get next block file\n");
@@ -295,7 +295,7 @@ static FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 }
 
 //A. Funzione che restituisce il blocco successivo directory
-static DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk){
+DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk){
 	BlockIndex* index = get_block_index_directory(directory,disk); //R. Estraggo il blocco index
 	if(index == NULL){
 		fprintf(stderr,"Errore nella get next block directory\n");
@@ -339,7 +339,7 @@ static DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDr
 //   In FileBlock* new andiamo a restituire il blocco, il quale verrà riempito con le informazioni
 //   e successivamente scritto nel disco (tramite writeBlock) nel int restituito dalla funzione.
 
-static int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver* disk){
+int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver* disk){
 	int current_position_in_index = current_block -> position;
 	
 	if(current_position_in_index + 1 == MAX_BLOCKS){
@@ -429,7 +429,7 @@ static int create_next_file_block(FileBlock* current_block, FileBlock* new, Disk
 
 
 //A. Funzione per creare un nuovo directory block collegandolo con il blocco index di riferimento.
-static int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk){
+int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk){
 	int current_position_in_index = current_block -> position;
 	
 	//A. Caso in cui devo creare un nuovo blocco index e collegarlo
@@ -484,7 +484,7 @@ static int create_next_directory_block(DirectoryBlock* current_block, DirectoryB
 	else{
 		
 		//A. Caso in cui posso utilizzare il blocco index corrente
-		BlockIndex* index = get_block_index_file(current_block,disk); 
+		BlockIndex* index = get_block_index_directory(current_block,disk); 
 		if(index == NULL){
 			fprintf(stderr,"Error: create_next_directory_block, get index block\n");
 			return -1;
