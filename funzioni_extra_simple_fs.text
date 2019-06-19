@@ -1,23 +1,23 @@
 Funzione per ottenere il blocco index da un file
 
-static BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk);
+BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk);
 
 ------------------------------------------------------------------------------------------
 Funzione per ottenere il blocco index da una directory
 
-static BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk);
+BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk);
 
 ------------------------------------------------------------------------------------------
 Funzione che restituisce il blocco successivo file utile soprattutto nelle operazioni di 
 lettura
 
-static FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk);
+FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk);
 
 ------------------------------------------------------------------------------------------
 Funzione che restituisce il blocco successivo directory utile soprattutto nelle operazioni 
 di lettura
 
-static FileBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk);
+FileBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk);
 
 ------------------------------------------------------------------------------------------
 Funzione per creare un nuovo blocco index, passandogli il predecessore
@@ -31,6 +31,6 @@ Utile soprattutto in casi di scrittura.
 In FileBlock* new andiamo a restituire il blocco, il quale verrà riempito con le informazioni
 e successivamente scritto nel disco (tramite writeBlock) nel int restituito dalla funzione.
 
-static int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver* disk);
+int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver* disk);
 
 ------------------------------------------------------------------------------------------
