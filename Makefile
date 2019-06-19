@@ -3,7 +3,7 @@ LIBS=
 CC=gcc
 AR=ar
 
-BINS= simplefs_test bitmap_test disk_driver_test
+BINS= simplefs_test bitmap_test disk_driver_test index_test
 
 HEADERS=bitmap.h\
 	disk_driver.h\
@@ -25,6 +25,9 @@ disk_driver_test: disk_driver_test.o disk_driver.o bitmap.o $(HEADERS)
 
 simplefs_test: simplefs_test.o simplefs.o disk_driver.o bitmap.o $(HEADERS)
 				$(CC) $(CCOPTS) disk_driver.c bitmap.c simplefs_test.c simplefs.c -o simplefs_test
+
+index_test: index_test.o simplefs.o disk_driver.o bitmap.o $(HEADERS)
+				$(CC) $(CCOPTS) disk_driver.c bitmap.c index_test.c simplefs.c -o index_test
 
 clean:
 	rm -rf *.txt *.o *~  $(BINS)
