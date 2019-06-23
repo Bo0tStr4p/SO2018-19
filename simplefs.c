@@ -237,9 +237,10 @@ BlockIndex create_block_index(int previous){
 
 //R. Funzione per ottenere il blocco index da un file
 BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
-	BlockIndex* index = NULL;
+	BlockIndex* index = (BlockIndex*)malloc(sizeof(BlockIndex));
 	if(DiskDriver_readBlock(disk, index, file->index_block) == -1){
 			fprintf(stderr,"Errore nella get next block file\n");
+			free(index);
 			return NULL;
 		}
 	return index;
@@ -247,9 +248,10 @@ BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 
 //A. Funzione per ottenere il blocco index da una directory
 BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk){
-	BlockIndex* index = NULL;
+	BlockIndex* index = (BlockIndex*)malloc(sizeof(BlockIndex));
 	if(DiskDriver_readBlock(disk, index, directory->index_block) == -1){
 			fprintf(stderr,"Errore nella get block index directory\n");
+			free(index);
 			return NULL;
 		}
 	return index;
@@ -269,27 +271,37 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	if((current_position + 1) == MAX_BLOCKS){
 		if(index->next == -1){
 			fprintf(stderr,"Error in get next block file\n");
+			free(index);
 			return NULL;
 		}
-		BlockIndex* next = NULL;
+		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
 		if(DiskDriver_readBlock(disk, next, index->next) == -1){
 			fprintf(stderr,"Errore nella get next block file\n");
+			free(index);
 			return NULL;
 		}
-		FileBlock* next_file = NULL;
+		FileBlock* next_file = (FileBlock*)malloc(sizeof(FileBlock));
 		if(DiskDriver_readBlock(disk, next_file, next->blocks[0]) == -1){
 			fprintf(stderr,"Errore nella get next block file\n");
+			free(index);
+			free(next);
 			return NULL;
 		}
+		free(index);
+		free(next);
+		
 		return next_file;
 	}
 	else{
 	//R. Caso in cui mi trovo ancora nello stesso blocco index
-	FileBlock* next_file = NULL;
+	FileBlock* next_file = (FileBlock*)malloc(sizeof(FileBlock));
 	if(DiskDriver_readBlock(disk, next_file, index->blocks[current_position + 1]) == -1){
 			fprintf(stderr,"Errore nella get next block file\n");
+			free(index);
 			return NULL;
 		}
+	free(index);
+	
 	return next_file;
 	}
 }
@@ -308,27 +320,37 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 	if((current_position + 1) == MAX_BLOCKS){
 		if(index->next == -1){
 			fprintf(stderr,"Error in get next block directory\n");
+			free(index);
 			return NULL;
 		}
-		BlockIndex* next = NULL;
+		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
 		if(DiskDriver_readBlock(disk, next, index->next) == -1){
 			fprintf(stderr,"Errore nella get next block directory\n");
+			free(index);
 			return NULL;
 		}
-		DirectoryBlock* next_directory = NULL;
+		DirectoryBlock* next_directory = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 		if(DiskDriver_readBlock(disk, next_directory, next->blocks[0]) == -1){
 			fprintf(stderr,"Errore nella get next block directory\n");
+			free(index);
+			free(next);
 			return NULL;
 		}
+		free(index);
+		free(next);
+		
 		return next_directory;
 	}
 	else{
 	//A. Caso in cui mi trovo ancora nello stesso blocco index
-	DirectoryBlock* next_directory = NULL;
+	DirectoryBlock* next_directory = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 	if(DiskDriver_readBlock(disk, next_directory, index->blocks[current_position + 1]) == -1){
 			fprintf(stderr,"Errore nella get next block directory\n");
+			free(index);
 			return NULL;
 		}
+	free(index);
+		
 	return next_directory;
 	}
 }
@@ -351,10 +373,13 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 			return -1;
 		}
 		
+		print_index_block(index);
+		
 		//R. Ottengo il nuovo blocco libero per index
 		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
 		if(new_index_block == -1){
 			fprintf(stderr,"Error: create_next_block_file, get free block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -362,6 +387,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		int block_return = DiskDriver_getFreeBlock(disk, new_index_block);
 		if(block_return == -1){
 			fprintf(stderr,"Error: create_next_block_file, get free block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -371,6 +397,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		index->next = new_index_block;
 		if(DiskDriver_updateBlock(disk, index, index_block) == -1){
 			fprintf(stderr,"Error:create next file block, update index block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -379,6 +406,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		new_index.blocks[0] = block_return;
 		if(DiskDriver_writeBlock(disk, &new_index, new_index_block) == -1){
 			fprintf(stderr,"Error:create next file block, write new index block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -387,6 +415,8 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		new_block.index_block = index_block;
 		new_block.position = 0;
 		new = &new_block; //R. Salvo il file block nel puntatore che passo alla funzione
+		
+		free(index);
 		
 		return block_return;
 		
@@ -400,6 +430,8 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 			return -1;
 		}
 		
+		print_index_block(index);
+		
 		int index_block = current_block -> index_block; //R. Recupero il blocco index nel disk driver
 		
 		//R. Inizializzo il nuovo blocco
@@ -412,6 +444,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		int block_return = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
 		if(block_return == -1){
 			fprintf(stderr,"Error: create_next_block_file, get free block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -419,8 +452,11 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		index->blocks[new_block.position] = block_return;
 		if(DiskDriver_updateBlock(disk, index, index_block) == -1){
 			fprintf(stderr,"Error:create next file block, update index block\n");
+			free(index);
 			return -1;
 		}
+		
+		free(index);
 		
 		return block_return;
 	}
@@ -445,6 +481,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
 		if(new_index_block == -1){
 			fprintf(stderr,"Error: create_next_directory_block, get free block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -452,6 +489,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		int block_return = DiskDriver_getFreeBlock(disk, new_index_block);
 		if(block_return == -1){
 			fprintf(stderr,"Error: create_next_directory_block, get free block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -461,6 +499,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		index->next = new_index_block;
 		if(DiskDriver_updateBlock(disk, index, index_block) == -1){
 			fprintf(stderr,"Error: create_next_directory_block, update index block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -469,6 +508,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		new_index.blocks[0] = block_return;
 		if(DiskDriver_writeBlock(disk, &new_index, new_index_block) == -1){
 			fprintf(stderr,"Error: create_next_directory_block, write new index block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -476,7 +516,9 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		DirectoryBlock new_block;
 		new_block.index_block = index_block;
 		new_block.position = 0;
-		new = &new_block; 
+		new = &new_block;
+		
+		free(index); 
 		
 		return block_return;
 		
@@ -502,6 +544,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		int block_return = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
 		if(block_return == -1){
 			fprintf(stderr,"Error: create_next_directory_block, get free block\n");
+			free(index);
 			return -1;
 		}
 		
@@ -509,11 +552,24 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		index->blocks[new_block.position] = block_return;
 		if(DiskDriver_updateBlock(disk, index, index_block) == -1){
 			fprintf(stderr,"Error:create_next_directory_block, update index block\n");
+			free(index);
 			return -1;
 		}
+		
+		free(index);
 		
 		return block_return;
 	}
 
+}
+
+void print_index_block(BlockIndex* index){
+	printf("Block_index_information:\n");
+	printf("Previous: %d\n",index->previous);
+	int i;
+	for(i=0;i<MAX_BLOCKS;i++){
+		printf("Blocco %d: %d\n",i+1,index->blocks[i]);
+	}
+	printf("Next: %d\n",index->next);
 }
   
