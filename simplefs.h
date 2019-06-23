@@ -182,7 +182,7 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk);
 DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk);
 
 //   Funzione per creare un nuovo file blocks collegandolo con il blocco index di riferimento.
-//   Restituisce il numero del blocco del disk driver su cui fare update, in caso di errore -1.
+//   Restituisce il numero del blocco del disk driver su cui fare write, in caso di errore -1.
 //   Utile soprattutto in casi di scrittura.
 //   In FileBlock* new andiamo a restituire il blocco, il quale verrà riempito con le informazioni
 //   e successivamente scritto nel disco (tramite writeBlock) nel int restituito dalla funzione.
@@ -191,6 +191,8 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 
 // Funzione per creare un nuovo directory block collegandolo con il blocco index di riferimento.
 int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk);
+
+void print_index_block(BlockIndex* index);
 
   
 
