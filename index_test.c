@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+//R. Funzione per creare il primo blocco file
 FileBlock* create_first_file_block(char value, int index_block){
 	int i;
 	FileBlock* file_block = (FileBlock*)malloc(sizeof(FileBlock));
@@ -26,8 +27,9 @@ FileBlock* create_first_file_block(char value, int index_block){
 
 int main(int argc, char** argv){
 	int free_block;
+	int first_free_block_position;
 	
-	printf("Inizio: \n");
+	printf("Start: \n");
 	
 	const char* filename = "./index_test.txt";
 	
@@ -46,11 +48,13 @@ int main(int argc, char** argv){
 	}
 	DiskDriver_print_information(my_disk,filename);
 	
-	printf("\n\n\n\n\n");
+	//R. Creo il first file block e aggiungo il blocco index
+	printf("\n\n");
 	printf("Creo il FirstFileBlock con un blocco index annesso...\n");
 	
 	BlockIndex index_file = create_block_index(-1);	
 	
+	//R. Riempio con valori casuali. Attualmente non sono necessari
 	FileControlBlock file_control_block = {
 		.directory_block = -1,
 		.block_in_disk = -1,
@@ -66,13 +70,15 @@ int main(int argc, char** argv){
 		.fcb = file_control_block,
 	};
 	
-	//Scrivo il FirstFileBlock sul disco
+	//R. Scrivo il FirstFileBlock sul disco
 	
 	free_block = DiskDriver_getFreeBlock(my_disk, 0);
 	if(free_block == -1){
 		fprintf(stderr, "Error: getFreeBlock\n");
 		return -1;
 	}
+	
+	first_free_block_position = free_block; //R. Salvo la posizione per recuperarlo successivamente
 
 	if(DiskDriver_writeBlock(my_disk, &ffb, free_block) == -1){
 		fprintf(stderr, "Error: could not write block 2 to disk\n");
@@ -85,13 +91,15 @@ int main(int argc, char** argv){
 	
 	printf("\nInizio l'operazione di scrittura su 15 file block\n");
 	
-	//Il primo file block va creato manualmente
+	//R. Il primo file block va creato manualmente
 	
-	FileBlock* block1 = create_first_file_block('1',0);
+	FileBlock* block1 = create_first_file_block('1',free_block);
 	
-	//Scrivo il primo blocco sul disco
+	printf("Scrivo il blocco 1\n");
 	
-	free_block = DiskDriver_getFreeBlock(my_disk, 0);
+	//R. Scrivo il primo blocco sul disco
+	
+	free_block = DiskDriver_getFreeBlock(my_disk, free_block);
 	if(free_block == -1){
 		fprintf(stderr, "Error: getFreeBlock\n");
 		return -1;
@@ -106,10 +114,10 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	//Aggiorno il primo blocco index
+	//R. Aggiorno il primo blocco index
 	FirstFileBlock* ffb_read = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
 	
-	if(DiskDriver_readBlock(my_disk, (void *)ffb_read, 0) == -1){
+	if(DiskDriver_readBlock(my_disk, (void *)ffb_read, first_free_block_position) == -1){
 		fprintf(stderr, "Error: could not write block 2 to disk\n");
 		return -1;
 	}
@@ -124,12 +132,15 @@ int main(int argc, char** argv){
 		fprintf(stderr, "Error: could not write block 2 to disk\n");
 		return -1;
 	}
-	if(DiskDriver_flush(my_disk) == -1){
+	if(DiskDriver_flush(my_disk) == -1){	
 		fprintf(stderr, "Error: flush\n");
 		return -1;
 	}
 	
-	//Creo gli altri 14 blocchi con la forma automatizzata
+	printf("ffb position: %d\n",first_free_block_position);
+	print_index_block(&ffb_read->index);
+	
+	//R. Creo gli altri 14 blocchi con la forma automatizzata
 	
 	int i,j, block_position;
 	FileBlock* current = block1;
@@ -137,6 +148,7 @@ int main(int argc, char** argv){
 	printf("\n Son qui\n");
 	
 	for(i=1;i<15;i++){
+		printf("Scrivo il blocco: %d\n",i+1);
 		FileBlock* file_block_tmp = (FileBlock*)malloc(sizeof(FileBlock));
 		
 		block_position = create_next_file_block(current, file_block_tmp, my_disk);
@@ -147,7 +159,7 @@ int main(int argc, char** argv){
 		data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)-1] = '\0';
 		strcpy(file_block_tmp->data, data_block);
 		
-		if(DiskDriver_updateBlock(my_disk, file_block_tmp, block_position) == -1){
+		if(DiskDriver_writeBlock(my_disk, file_block_tmp, block_position) == -1){
 			fprintf(stderr, "Error: could not write block 2 to disk\n");
 			return -1;
 		}	
@@ -155,6 +167,48 @@ int main(int argc, char** argv){
 			fprintf(stderr, "Error: flush\n");
 			return -1;
 		}
+		
+		current = file_block_tmp;
+		//free(file_block_tmp);
+		
+	}
+	
+	printf("\n\n Inizio la lettura\n\n");
+	
+	//R. Estraggo il ffb
+	
+	if(DiskDriver_readBlock(my_disk, ffb_read, first_free_block_position) == -1){
+		fprintf(stderr, "Error: could not read block 1 to disk\n");
+		return -1;
+	}
+	
+	
+	//R. Estraggo il primo FileBlock Manualmente
+	
+	FileBlock* read_block = (FileBlock*)malloc(sizeof(FileBlock));
+	if(read_block == NULL){
+		fprintf(stderr,"Errore nella creazione del file block");
+		return -1;
+	}
+	
+	printf("Leggo il blocco 1:\n");
+	
+	if(DiskDriver_readBlock(my_disk, read_block, ffb_read->index.blocks[0]) == -1){
+		fprintf(stderr, "Error: could not read block 1 to disk\n");
+		return -1;
+	}
+	printf("DATA:\n");
+	printf("%s\n\n", read_block->data);
+	
+	current = read_block;
+	
+	for(i=1;i<15;i++){
+		printf("Leggo il blocco: %d\n",i+1);
+		FileBlock* file_block_tmp = (FileBlock*)malloc(sizeof(FileBlock));
+		
+		file_block_tmp = get_next_block_file(current,my_disk);
+		printf("DATA:\n");
+		printf("%s\n\n", file_block_tmp->data);
 		
 		current = file_block_tmp;
 		free(file_block_tmp);
