@@ -383,7 +383,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		}
 		
 		//R. Ottengo il nuovo blocco libero per blocco
-		int block_return = DiskDriver_getFreeBlock(disk, new_index_block);
+		int block_return = DiskDriver_getFreeBlock(disk, new_index_block + 1);
 		if(block_return == -1){
 			fprintf(stderr,"Error: create_next_block_file, get free block\n");
 			free(index);
@@ -412,7 +412,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		
 		//R. Inizializzo il nuovo blocco
 		//FileBlock new_block;
-		new->index_block = index_block;
+		new->index_block = new_index_block;
 		new->position = 0;
 		//new = &new_block; //R. Salvo il file block nel puntatore che passo alla funzione
 		
@@ -484,7 +484,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		}
 		
 		//A. Ottengo il nuovo blocco libero per blocco
-		int block_return = DiskDriver_getFreeBlock(disk, new_index_block);
+		int block_return = DiskDriver_getFreeBlock(disk, new_index_block + 1);
 		if(block_return == -1){
 			fprintf(stderr,"Error: create_next_directory_block, get free block\n");
 			free(index);
@@ -511,7 +511,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		}
 		
 		//A. Si Inizializza il nuovo blocco
-		new->index_block = index_block;
+		new->index_block = new_index_block;
 		new->position = 0;
 		
 		free(index); 
