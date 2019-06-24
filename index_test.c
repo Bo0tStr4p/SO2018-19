@@ -151,6 +151,7 @@ int main(int argc, char** argv){
 		printf("Scrivo il blocco: %d\n",i+1);
 		FileBlock* file_block_tmp = (FileBlock*)malloc(sizeof(FileBlock));
 		
+		
 		block_position = create_next_file_block(current, file_block_tmp, my_disk);
 		
 		//R. Scrivo dei valori per riempire i blocchi
@@ -159,10 +160,13 @@ int main(int argc, char** argv){
 		data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)-1] = '\0';
 		strcpy(file_block_tmp->data, data_block);
 		
+		
 		if(DiskDriver_writeBlock(my_disk, file_block_tmp, block_position) == -1){
 			fprintf(stderr, "Error: could not write block 2 to disk\n");
 			return -1;
-		}	
+		}
+		
+			
 		if(DiskDriver_flush(my_disk) == -1){
 			fprintf(stderr, "Error: flush\n");
 			return -1;
