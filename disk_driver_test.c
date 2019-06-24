@@ -137,7 +137,7 @@ int main(int argc, char** argv){
 	
 	printf("\nWriting block 1 to disk (Expected: Ok)... ");
 	
-	if(DiskDriver_writeBlock(my_disk, block1, 0) == -1){
+	if(DiskDriver_writeBlock(my_disk, block1, 0, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not write block 1 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -158,7 +158,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 
-	if(DiskDriver_writeBlock(my_disk, block2, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block2, free_block, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not write block 2 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -179,7 +179,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block3, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block3, free_block, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not write block 3 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -200,7 +200,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block4, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block4, free_block, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not write block 4 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -221,7 +221,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block5, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block5, free_block, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not write block 5 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -242,7 +242,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	if(DiskDriver_writeBlock(my_disk, block6, free_block) == -1){
+	if(DiskDriver_writeBlock(my_disk, block6, free_block, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not write block 6 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -284,7 +284,7 @@ int main(int argc, char** argv){
 	}
 	
 	printf("Reading block 1 to disk (Expected: Ok)... ");
-	if(DiskDriver_readBlock(my_disk, block_test, 0) == -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 0, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not read block 1 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -292,7 +292,7 @@ int main(int argc, char** argv){
 	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
 	printf("Reading block 2 to disk (Expected: Ok)... ");
-	if(DiskDriver_readBlock(my_disk, block_test, 1) == -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 1, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not read block 2 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -300,7 +300,7 @@ int main(int argc, char** argv){
 	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
 	printf("Reading block 3 to disk (Expected: Ok)... ");
-	if(DiskDriver_readBlock(my_disk, block_test, 2) == -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 2, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not read block 3 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -308,7 +308,7 @@ int main(int argc, char** argv){
 	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
 	printf("Reading block 4 to disk (Expected: Ok)... ");
-	if(DiskDriver_readBlock(my_disk, block_test, 3) == -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 3, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not read block 4 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -316,7 +316,7 @@ int main(int argc, char** argv){
 	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
 	printf("Reading block 5 to disk (Expected: Ok)... ");
-	if(DiskDriver_readBlock(my_disk, block_test, 4) == -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 4, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not read block 5 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -324,7 +324,7 @@ int main(int argc, char** argv){
 	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
 	printf("Reading block 6 to disk (Expected: Ok)... ");
-	if(DiskDriver_readBlock(my_disk, block_test, 5) == -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 5, sizeof(FileBlock)) == -1){
 		fprintf(stderr, "%sError: could not read block 6 to disk\n%s",KRED,KNRM);
 		return -1;
 	}
@@ -332,7 +332,7 @@ int main(int argc, char** argv){
 	printf("%s%s%s\n\n", KYEL, block_test->data, KNRM);
 	
 	printf("Reading block 7 to disk (Expected: Error)... ");
-	if(DiskDriver_readBlock(my_disk, block_test, 6) == -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 6, sizeof(FileBlock)) == -1){
 		printf("%sError\n%s",KGRN,KNRM);
 	}
 	else{
@@ -349,7 +349,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	printf("%sOk\n%s",KGRN,KNRM);
-	if(DiskDriver_readBlock(my_disk, block_test, 0) != -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 0, sizeof(FileBlock)) != -1){
 		fprintf(stderr,"Ok\n");
 		return -1;
 	}
@@ -364,7 +364,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	printf("%sOk\n%s",KGRN,KNRM);
-	if(DiskDriver_readBlock(my_disk, block_test, 1) != -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 1, sizeof(FileBlock)) != -1){
 		fprintf(stderr,"Ok\n");
 		return -1;
 	}
@@ -379,7 +379,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	printf("%sOk\n%s",KGRN,KNRM);
-	if(DiskDriver_readBlock(my_disk, block_test, 2) != -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 2, sizeof(FileBlock)) != -1){
 		fprintf(stderr,"Ok\n");
 		return -1;
 	}
@@ -394,7 +394,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	printf("%sOk\n%s",KGRN,KNRM);
-	if(DiskDriver_readBlock(my_disk, block_test, 3) != -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 3, sizeof(FileBlock)) != -1){
 		fprintf(stderr,"Ok\n");
 		return -1;
 	}
@@ -409,7 +409,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	printf("%sOk\n%s",KGRN,KNRM);
-	if(DiskDriver_readBlock(my_disk, block_test, 4) != -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 4, sizeof(FileBlock)) != -1){
 		fprintf(stderr,"Ok\n");
 		return -1;
 	}
@@ -424,7 +424,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	printf("%sOk\n%s",KGRN,KNRM);
-	if(DiskDriver_readBlock(my_disk, block_test, 5) != -1){
+	if(DiskDriver_readBlock(my_disk, block_test, 5, sizeof(FileBlock)) != -1){
 		fprintf(stderr,"Ok\n");
 		return -1;
 	}
