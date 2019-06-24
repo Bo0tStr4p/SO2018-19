@@ -153,16 +153,15 @@ int main(int argc, char** argv){
 		
 		block_position = create_next_file_block(current, file_block_tmp, my_disk);
 		
-		
 		//R. Scrivo dei valori per riempire i blocchi
 		char data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)];
-		for(j = 0; j < (BLOCK_SIZE - sizeof(int) - sizeof(int)); j++) data_block[j] = (char)(49 + j);
+		for(j = 0; j < (BLOCK_SIZE - sizeof(int) - sizeof(int)); j++) data_block[j] = 49 + (char)i;
 		data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)-1] = '\0';
 		strcpy(file_block_tmp->data, data_block);
 		
 		
 		if(DiskDriver_writeBlock(my_disk, file_block_tmp, block_position) == -1){
-			fprintf(stderr, "Error: could not write block 2 to disk\n");
+			fprintf(stderr, "Error: could not write block %d to disk\n", i+1);
 			return -1;
 		}
 		
@@ -215,7 +214,8 @@ int main(int argc, char** argv){
 		printf("%s\n\n", file_block_tmp->data);
 		
 		current = file_block_tmp;
-		free(file_block_tmp);
+
+		//free(file_block_tmp);
 		
 	}
 	
