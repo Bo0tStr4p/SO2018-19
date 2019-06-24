@@ -381,7 +381,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 			free(index);
 			return -1;
 		}
-		printf("new index block:%i\n", new_index_block);
+		
 		//R. Ottengo il nuovo blocco libero per blocco
 		int block_return = DiskDriver_getFreeBlock(disk, new_index_block);
 		if(block_return == -1){
