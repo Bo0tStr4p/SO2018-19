@@ -435,10 +435,8 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 		int index_block = current_block -> index_block; //R. Recupero il blocco index nel disk driver
 		
 		//R. Inizializzo il nuovo blocco
-		//FileBlock* new_block = (FileBlock*)malloc(sizeof(FileBlock));
 		new->index_block = index_block;
 		new->position = current_position_in_index + 1;
-		//new = new_block; //R. Salvo il file block nel puntatore che passo alla funzione
 		
 		//R. Ottengo il nuovo blocco libero
 		int block_return = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
