@@ -112,7 +112,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 // reads the block in position block_num
 // returns -1 if the block is free accrding to the bitmap
 // 0 otherwise
-int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
+int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num, int bytes_to_read){
     if(block_num >= disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
 		fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
         return -1;
@@ -150,8 +150,8 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 		
 	//R. Classica funzione di scrittura con il file descriptor
 	int ret, read_bytes = 0;
-	while(read_bytes < BLOCK_SIZE){																		
-		if((ret = read(fd, dest + read_bytes, BLOCK_SIZE - read_bytes)) == -1){
+	while(read_bytes < bytes_to_read){																		
+		if((ret = read(fd, dest + read_bytes, bytes_to_read - read_bytes)) == -1){
 			if(errno == EINTR) 
 				continue;
 			else{
@@ -167,7 +167,7 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num){
 }
 
 // writes a block in position block_num, returns -1 if operation not possible
-int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num){
+int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num, int bytes_to_write){
 	 if(block_num >= disk->header->bitmap_blocks || block_num < 0 || src == NULL || disk == NULL ){
 		fprintf(stderr,"Error: could not start with write block. Bad parameters \n");
         return -1;
@@ -200,8 +200,8 @@ int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num){
 		
 	//R. Classica funzione di scrittura con il file descriptor
 	int ret, written_bytes = 0;
-	while(written_bytes < BLOCK_SIZE){																		
-		if((ret = write(fd, src + written_bytes, BLOCK_SIZE - written_bytes)) == -1){
+	while(written_bytes < bytes_to_write){																		
+		if((ret = write(fd, src + written_bytes, bytes_to_write - written_bytes)) == -1){
 			if(errno == EINTR) 
 				continue;
 			else{
@@ -218,7 +218,7 @@ int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num){
 
 // writes a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
-int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
+int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num, int bytes_to_write){
 	 if(block_num >= disk->header->bitmap_blocks || block_num < 0 || src == NULL || disk == NULL ){
 		fprintf(stderr,"Error: could not start with write block. Bad parameters \n");
         return -1;
@@ -269,8 +269,8 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
 		
 	//R. Classica funzione di scrittura con il file descriptor
 	int ret, written_bytes = 0;
-	while(written_bytes < BLOCK_SIZE){																		
-		if((ret = write(fd, src + written_bytes, BLOCK_SIZE - written_bytes)) == -1){
+	while(written_bytes < bytes_to_write){																		
+		if((ret = write(fd, src + written_bytes, bytes_to_write - written_bytes)) == -1){
 			if(errno == EINTR) 
 				continue;
 			else{

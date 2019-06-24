@@ -34,14 +34,14 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks);
 // reads the block in position block_num
 // returns -1 if the block is free accrding to the bitmap
 // 0 otherwise
-int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num);
+int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num, int bytes_to_read);
 
 // writes a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
-int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num);
+int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num, int bytes_to_write);
 
 // writes a block in position block_num,returns -1 if operation not possible
-int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num);
+int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num, int bytes_to_write);
 
 // frees a block in position block_num, and alters the bitmap accordingly
 // returns -1 if operation not possible
