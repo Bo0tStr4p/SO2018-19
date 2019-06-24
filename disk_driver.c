@@ -230,6 +230,7 @@ int DiskDriver_writeBlock(DiskDriver* disk, void* src, int block_num){
     bitmap.entries = disk->bitmap_data;
 
     //R. Qui devo andare a verificare che il blocco a cui voglio andare a scrivere sia libero
+    //printf("block_num:%i\n",block_num);
     if(BitMap_is_free_block(&bitmap, block_num)){ 
 		fprintf(stderr,"Error: Could't write a full block\n");
         return -1;

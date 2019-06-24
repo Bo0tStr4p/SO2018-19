@@ -150,9 +150,9 @@ int main(int argc, char** argv){
 	for(i=1;i<15;i++){
 		printf("Scrivo il blocco: %d\n",i+1);
 		FileBlock* file_block_tmp = (FileBlock*)malloc(sizeof(FileBlock));
-		
-		
+		//printf("current->position:%i\n",current->position);
 		block_position = create_next_file_block(current, file_block_tmp, my_disk);
+		//printf("block_position:%i\n",block_position);
 		
 		//R. Scrivo dei valori per riempire i blocchi
 		char data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)];
