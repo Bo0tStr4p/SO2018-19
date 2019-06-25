@@ -222,7 +222,7 @@ int main(int argc, char** argv){
 		current = file_block_tmp;
 		
 	}
-	
+	free(block1);
 	free(file_block_tmp);
 	free(ffb_read);
 	
