@@ -558,6 +558,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 }
 
 void print_index_block(BlockIndex* index){
+	printf("======== INDEX BLOCK ========\n");
 	printf("Block_index_information:\n");
 	printf("Previous: %d\n",index->previous);
 	int i;
@@ -565,5 +566,6 @@ void print_index_block(BlockIndex* index){
 		printf("Blocco %d: %d\n",i+1,index->blocks[i]);
 	}
 	printf("Next: %d\n",index->next);
+	printf("=====================================\n");
 }
   
