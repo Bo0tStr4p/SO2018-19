@@ -157,7 +157,8 @@ int main(int argc, char** argv){
 		
 		
 		block_position = create_next_file_block(current, file_block_tmp, my_disk);
-		free(current);
+		//free(current); A. questa è da levare da qui, causa problemi
+		
 		
 		//R. Scrivo dei valori per riempire i blocchi
 		char data_block[BLOCK_SIZE - sizeof(int) - sizeof(int)];

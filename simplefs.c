@@ -239,7 +239,7 @@ BlockIndex create_block_index(int previous){
 BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 	BlockIndex* index = (BlockIndex*)malloc(sizeof(BlockIndex));
 	if(DiskDriver_readBlock(disk, index, file->index_block, sizeof(BlockIndex)) == -1){
-			fprintf(stderr,"Errore nella get next block file\n");
+			fprintf(stderr,"Errore nella get_block_index_file\n");
 			free(index);
 			return NULL;
 		}
