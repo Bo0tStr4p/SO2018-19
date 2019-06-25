@@ -114,7 +114,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	free(block1);
+	//free(block1);  //A. non si può fare free qui perchè block1 viene riutilizzato alla riga 148
 	
 	//R. Aggiorno il primo blocco index
 	FirstFileBlock* ffb_read = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
@@ -157,7 +157,7 @@ int main(int argc, char** argv){
 		
 		
 		block_position = create_next_file_block(current, file_block_tmp, my_disk);
-		//free(current); A. questa è da levare da qui, causa problemi
+		//free(current); //A. questa è da levare da qui, causa problemi. current viene riutilizzato successivamente alla riga 181
 		
 		
 		//R. Scrivo dei valori per riempire i blocchi
