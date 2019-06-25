@@ -181,7 +181,7 @@ int main(int argc, char** argv){
 		current = file_block_tmp;
 		
 	}
-	
+	free(current);
 	printf("\n\n Inizio la lettura\n\n");
 	
 	//R. Estraggo il ffb
@@ -211,6 +211,7 @@ int main(int argc, char** argv){
 	
 	current = read_block;
 	
+	
 	for(i=1;i<15;i++){
 		printf("Leggo il blocco: %d\n",i+1);
 		
@@ -222,6 +223,7 @@ int main(int argc, char** argv){
 		current = file_block_tmp;
 		
 	}
+	
 	free(block1);
 	free(file_block_tmp);
 	free(ffb_read);
@@ -230,6 +232,6 @@ int main(int argc, char** argv){
 	
 	
 	free(my_disk);
-	
+
 	return 0;
 }
