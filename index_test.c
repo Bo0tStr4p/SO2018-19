@@ -371,6 +371,56 @@ int main(int argc, char** argv){
 	free(current_dir);
 	printf("\n\n Inizio la lettura\n\n");
 	
+	//A. Estraggo il ffb
+	if(DiskDriver_readBlock(my_disk, fdb_read, first_free_block_position, sizeof(FirstDirectoryBlock)) == -1){
+		fprintf(stderr, "Error: could not read block 1 to disk\n");
+		return -1;
+	}
+	
+	
+	//A. Estraggo il primo DirectoryBlock Manualmente
+	DirectoryBlock* read_block_dir = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(read_block_dir == NULL){
+		fprintf(stderr,"Errore nella creazione del file block");
+		return -1;
+	}
+	
+	printf("Leggo il blocco 1:\n");
+	
+	if(DiskDriver_readBlock(my_disk, read_block_dir, fdb_read->index.blocks[0], sizeof(DirectoryBlock)) == -1){
+		fprintf(stderr, "Error: could not read block 1 to disk\n");
+		return -1;
+	}
+	printf("FILE_BLOCKS:\n");
+	
+	for(j = 0; j < (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int); j++) {
+		printf("read_block_dir->file_blocks[%d]:%d\n",j,read_block_dir->file_blocks[j]);
+	}	
+	
+	current_dir = read_block_dir;
+	
+	
+	for(i=1;i<15;i++){
+		printf("Leggo il blocco: %d\n",i+1);
+		
+		directory_block_tmp = get_next_block_directory(current_dir,my_disk);
+		free(current_dir);
+		printf("FILE_BLOCKS:\n");
+		for(j = 0; j < (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int); j++) {
+			printf("directory_block_tmp->file_blocks[%d]:%d\n",j,directory_block_tmp->file_blocks[j]);
+		}
+		
+		current_dir = directory_block_tmp;
+		
+	}
+	
+	free(block2);
+	free(directory_block_tmp);
+	free(fdb_read);
+	
+	printf("End test directory\n");
+	printf("===================================================\n");
+	
 	free(my_disk);
 
 	return 0;
