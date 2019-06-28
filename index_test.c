@@ -251,12 +251,15 @@ int main(int argc, char** argv){
 	
 	//Continuare qui con la directory test
 	
+	DiskDriver_print_information(my_disk,filename);
+	
 	printf("Start test Directory\n");
 	
 	printf("\n\n");
 	printf("Creo la FirstDirectoryBlock con un blocco index annesso...\n");
 	
 	BlockIndex index_directory = create_block_index(-1);	
+	
 	
 	FirstDirectoryBlock fdb = {
 		.index = index_directory,
@@ -270,7 +273,7 @@ int main(int argc, char** argv){
 		return -1;
 	}
 	
-	first_free_block_position = free_block; //R. Salvo la posizione per recuperarlo successivamente
+	first_free_block_position = free_block; //A. Salvo la posizione per recuperarlo successivamente
 
 	if(DiskDriver_writeBlock(my_disk, &fdb, free_block, sizeof(FirstDirectoryBlock)) == -1){
 		fprintf(stderr, "Error: could not write block 2 to disk\n");
@@ -320,7 +323,7 @@ int main(int argc, char** argv){
 	
 	fdb_read->index.blocks[0] = free_block;
 	
-	if(DiskDriver_updateBlock(my_disk, fdb_read, 0, sizeof(FirstDirectoryBlock)) == -1){
+	if(DiskDriver_updateBlock(my_disk, fdb_read, first_free_block_position, sizeof(FirstDirectoryBlock)) == -1){
 		fprintf(stderr, "Error: could not write block 2 to disk\n");
 		return -1;
 	}
@@ -335,7 +338,7 @@ int main(int argc, char** argv){
 	//A. Creo gli altri 14 blocchi con la forma automatizzata
 	DirectoryBlock* current_dir = block2;
 	
-	printf("\n Son qui\n");
+	printf("\n Son qui directory\n");
 	
 	DirectoryBlock* directory_block_tmp = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 	
