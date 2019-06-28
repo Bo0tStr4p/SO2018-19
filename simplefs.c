@@ -475,6 +475,8 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 			return -1;
 		}
 		
+		print_index_block(index);
+		
 		//A. Ottengo il nuovo blocco libero per index
 		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
 		if(new_index_block == -1){
@@ -527,6 +529,8 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 			fprintf(stderr,"Error: create_next_directory_block, get index block\n");
 			return -1;
 		}
+		
+		print_index_block(index);
 		
 		int index_block = current_block -> index_block; 
 		

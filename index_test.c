@@ -25,6 +25,23 @@ FileBlock* create_first_file_block(char value, int index_block){
 	return file_block;
 }
 
+//A. Funzione per creare il primo blocco directory
+DirectoryBlock* create_first_directory_block(int value, int index_block){
+	int i;
+	DirectoryBlock* directory_block = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(directory_block == NULL){
+		fprintf(stderr,"Error: malloc create_directory_block\n");
+		return NULL;
+	}
+	
+	directory_block->index_block = index_block;
+	directory_block->position = 0;
+	
+	//A. Scrivo dei valori per riempire i blocchi
+	for(i = 0; i < (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int); i++) directory_block->file_blocks[i] = value;
+	return directory_block;
+}
+
 int main(int argc, char** argv){
 	int free_block;
 	int first_free_block_position;
@@ -181,6 +198,7 @@ int main(int argc, char** argv){
 		current = file_block_tmp;
 		
 	}
+	
 	free(current);
 	printf("\n\n Inizio la lettura\n\n");
 	
@@ -228,8 +246,130 @@ int main(int argc, char** argv){
 	free(file_block_tmp);
 	free(ffb_read);
 	
+	printf("End test file\n");
+	printf("===================================================\n");
+	
 	//Continuare qui con la directory test
 	
+	printf("Start test Directory\n");
+	
+	printf("\n\n");
+	printf("Creo la FirstDirectoryBlock con un blocco index annesso...\n");
+	
+	BlockIndex index_directory = create_block_index(-1);	
+	
+	FirstDirectoryBlock fdb = {
+		.index = index_directory,
+		.fcb = file_control_block,
+	};
+	
+	//R. Scrivo la FirstDirectoryBlock sul disco
+	
+	free_block = DiskDriver_getFreeBlock(my_disk, 0);
+	if(free_block == -1){
+		fprintf(stderr, "Error: getFreeBlock\n");
+		return -1;
+	}
+	
+	first_free_block_position = free_block; //R. Salvo la posizione per recuperarlo successivamente
+
+	if(DiskDriver_writeBlock(my_disk, &fdb, free_block, sizeof(FirstDirectoryBlock)) == -1){
+		fprintf(stderr, "Error: could not write block 2 to disk\n");
+		return -1;
+	}
+	if(DiskDriver_flush(my_disk) == -1){
+		fprintf(stderr, "Error: flush\n");
+		return -1;
+	}
+	
+	printf("\nInizio l'operazione di scrittura su 15 directory block\n");
+	
+	//A. La prima directory block va creato manualmente
+	
+	DirectoryBlock* block2 = create_first_directory_block('1',free_block);
+	
+	printf("Scrivo il blocco 1\n");
+	
+	//A. Scrivo il primo blocco sul disco
+	
+	free_block = DiskDriver_getFreeBlock(my_disk, free_block);
+	if(free_block == -1){
+		fprintf(stderr, "Error: getFreeBlock\n");
+		return -1;
+	}
+
+	if(DiskDriver_writeBlock(my_disk, block1, free_block, sizeof(FileBlock)) == -1){
+		fprintf(stderr, "Error: could not write block 2 to disk\n");
+		return -1;
+	}
+	if(DiskDriver_flush(my_disk) == -1){
+		fprintf(stderr, "Error: flush\n");
+		return -1;
+	}
+	
+	
+	//A. Aggiorno il primo blocco index
+	FirstDirectoryBlock* fdb_read = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
+	
+	if(DiskDriver_readBlock(my_disk, (void *)fdb_read, first_free_block_position, sizeof(FirstDirectoryBlock)) == -1){
+		fprintf(stderr, "Error: could not write block 2 to disk\n");
+		return -1;
+	}
+	if(DiskDriver_flush(my_disk) == -1){
+		fprintf(stderr, "Error: flush\n");
+		return -1;
+	}
+	
+	fdb_read->index.blocks[0] = free_block;
+	
+	if(DiskDriver_updateBlock(my_disk, fdb_read, 0, sizeof(FirstDirectoryBlock)) == -1){
+		fprintf(stderr, "Error: could not write block 2 to disk\n");
+		return -1;
+	}
+	if(DiskDriver_flush(my_disk) == -1){	
+		fprintf(stderr, "Error: flush\n");
+		return -1;
+	}
+	
+	printf("fdb position: %d\n",first_free_block_position);
+	print_index_block(&fdb_read->index);
+	
+	//A. Creo gli altri 14 blocchi con la forma automatizzata
+	
+	DirectoryBlock* current_dir = block2;
+	
+	printf("\n Son qui\n");
+	
+	DirectoryBlock* directory_block_tmp = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	
+	for(i=1;i<15;i++){
+		
+		printf("Scrivo il blocco: %d\n",i+1);
+		
+		
+		block_position = create_next_directory_block(current_dir, directory_block_tmp, my_disk);
+		
+		
+		//A. Scrivo dei valori per riempire i blocchi
+		for(j = 0; j < (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int); j++) directory_block_tmp->file_blocks[j] = j;
+		
+		
+		if(DiskDriver_writeBlock(my_disk, directory_block_tmp, block_position, sizeof(DirectoryBlock)) == -1){
+			fprintf(stderr, "Error: could not write block %d to disk\n", i+1);
+			return -1;
+		}	
+			
+		if(DiskDriver_flush(my_disk) == -1){
+			fprintf(stderr, "Error: flush\n");
+			return -1;
+		}
+		
+		current_dir = directory_block_tmp;
+		
+	}
+	
+	free(current);
+	printf("\n\n Inizio la lettura\n\n");
 	
 	free(my_disk);
 
