@@ -174,10 +174,10 @@ int DiskDriver_updateBlock(DiskDriver* disk, void* src, int block_num, int bytes
 	}
 	
 	//R. Vado ad aggiornare al disco i blocchi libero
-    if(block_num == disk->header->first_free_block)																
+    /*if(block_num == disk->header->first_free_block)																
 	    disk->header->first_free_block = DiskDriver_getFreeBlock(disk, block_num+1);
 	   
-	disk->header->free_blocks -=1;
+	disk->header->free_blocks -=1;*/
 	
     /* Versione con memcpy non funziona
     //R. Vado a calcolare la posizione in cui devo iniziare la scrittura del blocco nel disco
