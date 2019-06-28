@@ -429,7 +429,7 @@ int main(int argc, char** argv){
 		
 		printf(" %sOk\n\n%s",KGRN,KNRM);
 		
-		if(DiskDriver_readBlock(my_disk, (void *)fdb_read, file_block_tmp->index_block, sizeof(FirstFileBlock)) == -1){
+		if(DiskDriver_readBlock(my_disk, (void *)fdb_read, directory_block_tmp->index_block, sizeof(FirstFileBlock)) == -1){
 			fprintf(stderr, "%sError: could not write first directory block block to disk\n%s",KRED,KNRM);
 			return -1;
 		}	
@@ -496,7 +496,7 @@ int main(int argc, char** argv){
 	
 		printf("%s",KYEL);
 		for(j = 0; j < (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int); j++) {
-			printf("%d ", read_block_dir->file_blocks[j]);
+			printf("%d ", directory_block_tmp->file_blocks[j]);
 		}
 		printf("%s\n\n", KNRM);	
 		
