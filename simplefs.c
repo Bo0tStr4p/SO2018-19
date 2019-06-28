@@ -372,7 +372,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 			return -1;
 		}
 		
-		print_index_block(index);
+		//print_index_block(index);
 		
 		//R. Ottengo il nuovo blocco libero per index
 		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
@@ -430,7 +430,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 			return -1;
 		}
 		
-		print_index_block(index);
+		//print_index_block(index);
 		
 		int index_block = current_block -> index_block; //R. Recupero il blocco index nel disk driver
 		
@@ -475,7 +475,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 			return -1;
 		}
 		
-		print_index_block(index);
+		//print_index_block(index);
 		
 		//A. Ottengo il nuovo blocco libero per index
 		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
@@ -530,7 +530,7 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 			return -1;
 		}
 		
-		print_index_block(index);
+		//print_index_block(index);
 		
 		int index_block = current_block -> index_block; 
 		
