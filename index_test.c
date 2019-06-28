@@ -263,8 +263,7 @@ int main(int argc, char** argv){
 		.fcb = file_control_block,
 	};
 	
-	//R. Scrivo la FirstDirectoryBlock sul disco
-	
+	//A. Scrivo la FirstDirectoryBlock sul disco
 	free_block = DiskDriver_getFreeBlock(my_disk, 0);
 	if(free_block == -1){
 		fprintf(stderr, "Error: getFreeBlock\n");
@@ -285,20 +284,19 @@ int main(int argc, char** argv){
 	printf("\nInizio l'operazione di scrittura su 15 directory block\n");
 	
 	//A. La prima directory block va creato manualmente
-	
-	DirectoryBlock* block2 = create_first_directory_block('1',free_block);
+	DirectoryBlock* block2 = create_first_directory_block(1,free_block);
 	
 	printf("Scrivo il blocco 1\n");
 	
-	//A. Scrivo il primo blocco sul disco
 	
+	//A. Scrivo il primo blocco sul disco
 	free_block = DiskDriver_getFreeBlock(my_disk, free_block);
 	if(free_block == -1){
 		fprintf(stderr, "Error: getFreeBlock\n");
 		return -1;
 	}
 
-	if(DiskDriver_writeBlock(my_disk, block1, free_block, sizeof(FileBlock)) == -1){
+	if(DiskDriver_writeBlock(my_disk, block2, free_block, sizeof(DirectoryBlock)) == -1){
 		fprintf(stderr, "Error: could not write block 2 to disk\n");
 		return -1;
 	}
@@ -335,7 +333,6 @@ int main(int argc, char** argv){
 	print_index_block(&fdb_read->index);
 	
 	//A. Creo gli altri 14 blocchi con la forma automatizzata
-	
 	DirectoryBlock* current_dir = block2;
 	
 	printf("\n Son qui\n");
@@ -368,7 +365,7 @@ int main(int argc, char** argv){
 		
 	}
 	
-	free(current);
+	free(current_dir);
 	printf("\n\n Inizio la lettura\n\n");
 	
 	free(my_disk);
