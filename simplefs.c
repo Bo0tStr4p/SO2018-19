@@ -167,10 +167,10 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 // returns the number of bytes read
 int SimpleFS_read(FileHandle* f, void* data, int size){
 	FirstFileBlock* first_file = f->fcb; //R. Estraggo il FirstFileBlock
-	//BlockIndex* index = first_file->index; //R. Estraggo il mio blocco index
+	DiskDriver* my_disk = f->sfs->disk; //R. Estraggo il disco
 	
 	int off = f->pos_in_file;															
-	int written_bytes = first_file->fcb.size_in_bytes;													
+	int written_bytes = first_file->fcb.written_bytes;													
 	
 	//R. Controllo che la parte da leggere non vada oltre ciò che si trova nel file
 	if(size+off > written_bytes){																
@@ -178,9 +178,91 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 		return -1;
 	}
 	
-	//R. Costruire il sistema di lettura che calcola la posizione in cui si trova il
-	//FileHandle e legge tutti i blocchi successivi, salvandoli in void* data
-	return 0;
+	int bytes_read = 0;
+	int to_read = size;
+	int space_file_block = BLOCK_SIZE - sizeof(int) - sizeof(int);
+	
+	FileBlock* file_block_tmp = (FileBlock*)malloc(sizeof(FileBlock));
+	if(file_block_tmp == NULL){
+		fprintf(stderr,"Error: malloc file_block_tmp in SimpleFS_read\n");
+		return -1;
+	}
+	
+	//R. Caso in cui devo partire dal primo file block e non devo andare oltre
+	if(off < space_file_block && to_read <= (space_file_block-off)){	
+		//R. Estraggo il primo file block
+		if(DiskDriver_readBlock(my_disk, (void*) file_block_tmp, first_file->index.blocks[0], sizeof(FileBlock)) == -1){
+			fprintf(stderr,"Error: could not read file block in read.");
+			free(file_block_tmp);
+			return -1;
+		}
+		memcpy(data, file_block_tmp->data + off, to_read);							
+		bytes_read += to_read;
+		to_read = size - bytes_read;
+		f->pos_in_file += bytes_read;
+		free(file_block_tmp);
+		return bytes_read;
+	}
+	//R. Caso in cui devo partire dal primo file block ma devo andare anche oltre
+	else if(off < space_file_block && to_read > (space_file_block-off)){
+		//R. Estraggo il primo file block
+		if(DiskDriver_readBlock(my_disk, (void*) file_block_tmp, first_file->index.blocks[0], sizeof(FileBlock)) == -1){
+			fprintf(stderr,"Error: could not read file block in read.");
+			free(file_block_tmp);
+			return -1;
+		}	
+		memcpy(data, file_block_tmp->data + off, space_file_block-off);																	
+		bytes_read += space_file_block-off;
+		to_read = size - bytes_read;
+		off = 0; //R. Metto off a zero perché devo leggere tutti gli altri blocchi a venire
+	}
+	else{
+		return 0; //TODO
+	}
+	/*
+	//R. Caso in cui devo trovare il blocco da cui partire
+	else{
+		//R. Calcolo il blocco al quale devo accedere
+		
+		//R. Caso in cui devo leggere solo il blocco calcolato
+		if(){
+		}
+		//R. Caso in cui devo leggere il blocco calcolato e i successivi
+		else{
+		}
+	}
+	*/
+	//R. Continuo con la lettura in tutti i blocchi successivi
+	
+	while(bytes_read < size && file_block_tmp != NULL){
+		//R. Estraggo il blocco successivo
+		file_block_tmp =  get_next_block_file(file_block_tmp,my_disk);
+		if(file_block_tmp == NULL){
+			f->pos_in_file += bytes_read;
+			free(file_block_tmp);
+			return bytes_read;
+		}
+		//R. Caso in cui devo leggere il singolo blocco successivo
+		else if(off < space_file_block && to_read <= (space_file_block-off)){											
+			memcpy(data+bytes_read, file_block_tmp->data + off, to_read);													
+			bytes_read += to_read;
+			to_read = size - bytes_read;
+			f->pos_in_file += bytes_read;
+			free(file_block_tmp);
+			return bytes_read;
+		}
+		//R. Caso in cui devo leggere tutti i blocchi successivi
+		else{										
+			memcpy(data+bytes_read, file_block_tmp->data + off, space_file_block - off);																	
+			bytes_read += space_file_block-off;
+			to_read = size - bytes_read;
+			off = 0;
+		}
+	}
+
+	free(file_block_tmp);
+	f->pos_in_file += bytes_read;
+	return bytes_read;
 }
 
 // returns the number of bytes read (moving the current pointer to pos)
