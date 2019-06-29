@@ -168,6 +168,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 int SimpleFS_read(FileHandle* f, void* data, int size){
 	FirstFileBlock* first_file = f->fcb; //R. Estraggo il FirstFileBlock
 	DiskDriver* my_disk = f->sfs->disk; //R. Estraggo il disco
+	int i;
 	
 	int off = f->pos_in_file;															
 	int written_bytes = first_file->fcb.written_bytes;													
@@ -188,14 +189,30 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 		return -1;
 	}
 	
-	//R. Caso in cui devo partire dal primo file block e non devo andare oltre
-	if(off < space_file_block && to_read <= (space_file_block-off)){	
-		//R. Estraggo il primo file block
-		if(DiskDriver_readBlock(my_disk, (void*) file_block_tmp, first_file->index.blocks[0], sizeof(FileBlock)) == -1){
-			fprintf(stderr,"Error: could not read file block in read.");
-			free(file_block_tmp);
+	//R. Calcolo il blocco al quale devo accedere
+	int index_block_ref = off/(10*space_file_block);
+	int file_index_pos = (off - index_block_ref*space_file_block*10)/space_file_block;
+		
+	BlockIndex index = first_file->index;
+		
+	//R. mi posiziono al blocco index di riferimento
+	for(i=0;i<index_block_ref;i++){
+		if(DiskDriver_readBlock(my_disk, (void*)&index, index.next, sizeof(BlockIndex)) == -1){
+			fprintf(stderr,"Error, next block in SimpleFs_read.\n");
 			return -1;
 		}
+	}
+		
+	//R. Estraggo il FileBlock da cui partire
+	if(DiskDriver_readBlock(my_disk, (void*)file_block_tmp, index.blocks[file_index_pos], sizeof(FileBlock)) == -1){
+		fprintf(stderr,"Error: could not read file block in read.\n");
+		return -1;
+	}
+	
+	off = off - index_block_ref*space_file_block*10;
+	
+	//R. Caso in cui devo partire dal primo file block e non devo andare oltre
+	if(off < space_file_block && to_read <= (space_file_block-off)){	
 		memcpy(data, file_block_tmp->data + off, to_read);							
 		bytes_read += to_read;
 		to_read = size - bytes_read;
@@ -205,33 +222,14 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 	}
 	//R. Caso in cui devo partire dal primo file block ma devo andare anche oltre
 	else if(off < space_file_block && to_read > (space_file_block-off)){
-		//R. Estraggo il primo file block
-		if(DiskDriver_readBlock(my_disk, (void*) file_block_tmp, first_file->index.blocks[0], sizeof(FileBlock)) == -1){
-			fprintf(stderr,"Error: could not read file block in read.");
-			free(file_block_tmp);
-			return -1;
-		}	
 		memcpy(data, file_block_tmp->data + off, space_file_block-off);																	
 		bytes_read += space_file_block-off;
 		to_read = size - bytes_read;
-		off = 0; //R. Metto off a zero perché devo leggere tutti gli altri blocchi a venire
 	}
+	//R. Caso default
 	else{
-		return 0; //TODO
+		return -1;
 	}
-	/*
-	//R. Caso in cui devo trovare il blocco da cui partire
-	else{
-		//R. Calcolo il blocco al quale devo accedere
-		
-		//R. Caso in cui devo leggere solo il blocco calcolato
-		if(){
-		}
-		//R. Caso in cui devo leggere il blocco calcolato e i successivi
-		else{
-		}
-	}
-	*/
 	//R. Continuo con la lettura in tutti i blocchi successivi
 	
 	while(bytes_read < size && file_block_tmp != NULL){
@@ -243,8 +241,8 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 			return bytes_read;
 		}
 		//R. Caso in cui devo leggere il singolo blocco successivo
-		else if(off < space_file_block && to_read <= (space_file_block-off)){											
-			memcpy(data+bytes_read, file_block_tmp->data + off, to_read);													
+		else if(to_read <= space_file_block){											
+			memcpy(data+bytes_read, file_block_tmp->data, to_read);													
 			bytes_read += to_read;
 			to_read = size - bytes_read;
 			f->pos_in_file += bytes_read;
@@ -253,10 +251,9 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 		}
 		//R. Caso in cui devo leggere tutti i blocchi successivi
 		else{										
-			memcpy(data+bytes_read, file_block_tmp->data + off, space_file_block - off);																	
-			bytes_read += space_file_block-off;
+			memcpy(data+bytes_read, file_block_tmp->data, space_file_block);																	
+			bytes_read += space_file_block;
 			to_read = size - bytes_read;
-			off = 0;
 		}
 	}
 
