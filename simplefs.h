@@ -64,10 +64,10 @@ typedef struct {
   BlockIndex index;
   FileControlBlock fcb;
   int num_entries;
-  int file_blocks[ (BLOCK_SIZE
+  /*int file_blocks[ (BLOCK_SIZE
 		   -sizeof(BlockIndex)
 		   -sizeof(FileControlBlock)
-		    -sizeof(int))/sizeof(int) ];
+		    -sizeof(int))/sizeof(int) ];*/
 } FirstDirectoryBlock;
 
 // this is remainder block of a directory
