@@ -152,6 +152,9 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 
 // closes a file handle (destroyes it)
 int SimpleFS_close(FileHandle* f){
+	free(f->fcb);
+	free(f->current_block);
+	free(f);
 	return 0;
 }
 
