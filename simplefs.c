@@ -26,7 +26,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 	DirectoryHandle* directory_handle = (DirectoryHandle*)malloc(sizeof(DirectoryHandle));		//A. Il blocco è disponibile, quindi posso allocare la struttura
 	directory_handle->sfs = fs;
 	directory_handle->dcb = &first_directory_block;
-	directory_handle->directory = NULL;
+	directory_handle->parent_dir = NULL;
 	directory_handle->current_block = NULL;
 	directory_handle->pos_in_dir = 0;
 	directory_handle->pos_in_block = 0;
