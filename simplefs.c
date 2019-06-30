@@ -288,8 +288,90 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		return -1;
 	}
 	
- 	
- 	return 0;
+	//A. Confrontando il nome con ".." vedo se il comando inserito mi chiede di andare alla cartella genitore
+	if(strcmp(dirname,"..") == 0){	
+		if(d->dcb->fcb.block_in_disk == 0){ 												//A. Controllo se la directory in cui sto è la root
+			fprintf("Errore in SimpleFS_changeDir: mi trovo nella directory root\n");
+			return -1;
+		}
+		
+		int parent_block = d->parent_dir->fcb.directory_block;
+		d->pos_in_block = 0;
+		d->dcb = d->parent_dir;
+
+		//A. Se -1, mi sto spostando nella root
+		if(parent_block == -1){
+			d->parent_dir = NULL;
+			return 0;
+		}
+		
+		//A. leggo dal disco il blocco della directory genitore. Se la lettura va a buon fine assegno al dir_handle la cartella genitore aggiornata
+		int res;
+		FirstDirectoryBlock* parent_directory = malloc(sizeof(FirstDirectoryBlock));
+		res = DiskDriver_readBlock(d->sfs->disk,parent_directory,parent_block);
+		if(res == -1){
+			fprintf("Errore in SimpleFS_changeDir: fallita la lettura del blocco della directory genitore \n");
+			d->parent_dir = NULL;
+			return -1; 
+		}
+		else{
+			d->parent_dir = parent_directory;
+		}
+		return 0;
+	}
+	
+	//A. caso in cui la directory in cui sto dentro è vuota
+	else if(d->dcb->num_entries < 0){ 
+		fprintf("Errore in SimpleFS_changeDir: la directory in cui sto è vuota\n");
+		return -1;
+	}
+	else{
+		//A. caso normale in cui mi sposto in una cartella contenuta nella cartella in cui mi trovo
+		FirstDirectoryBlock* fdb = d->dcb;
+		DirectoryBlock* db = d->current_block;
+		DiskDriver* disk = d->sfs->disk;
+		
+		//A. Ci sono due sottocasi però: il primo, quello in cui la directory in cui mi sposto è nello stesso blocco indice della directory in cui sono
+		FirstDirectoryBlock* dir_dest = malloc(sizeof(FirstDirectoryBlock));
+		int i;
+		int dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+		for(i = 0; i < dim; i++){
+			if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i])) != -1){
+				if(strncmp(dir_dest->fcb.name,dirname) == 0){
+					DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i]);
+					d->pos_in_block = 0; 
+					d->parent_dir = fdb;
+					d->dcb = dir_dest;
+					return 0;
+				}
+			}
+		}
+		
+		//A. Il secondo, quello in cui la directory in cui mi sposto è in un diverso blocco indice rispetto alla directory in cui sono
+		int next_block = fdb->index.next;
+		DirectoryBlock db;
+		while(next_block != -1){
+			res = DiskDriver_readBlock(disk,dir_dest,next_block);
+			if(res == -1){
+				printf("Errore in SimpleFS_changeDir: errore della readBlock\n");
+				return -1;
+			}
+			for(i = 0; i < dim; i++){
+				if(db.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&dir_dest,db.file_blocks[i])) != -1){
+					if(strcmp(dir_dest->fcb.name,dirname) == 0){
+						DiskDriver_readBlock(disk,dir_dest,db.file_blocks[i]);
+						d->pos_in_block = 0;
+						d->directory = fdb;
+						d->dcb = dir_dest;
+						return 0;
+					}
+				}
+			}
+			next_block = db.index.next;
+	}
+	printf("Errore: non si può cambiare directory\n");
+	return -1;
+
  }
 
 // creates a new directory in the current one (stored in fs->current_directory_block)
