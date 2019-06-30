@@ -308,7 +308,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		//A. leggo dal disco il blocco della directory genitore. Se la lettura va a buon fine assegno al dir_handle la cartella genitore aggiornata
 		int res;
 		FirstDirectoryBlock* parent_directory = malloc(sizeof(FirstDirectoryBlock));
-		res = DiskDriver_readBlock(d->sfs->disk,parent_directory,parent_block);
+		res = DiskDriver_readBlock(d->sfs->disk,parent_directory,parent_block,sizeof(FirstDirectoryBlock));
 		if(res == -1){
 			fprintf(stderr, "Errore in SimpleFS_changeDir: fallita la lettura del blocco della directory genitore \n");
 			d->parent_dir = NULL;
@@ -336,9 +336,9 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		int i;
 		int dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
 		for(i = 0; i < dim; i++){
-			if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i])) != -1){
+			if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 				if(strncmp(dir_dest->fcb.name,dirname) == 0){
-					DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i]);
+					DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock));
 					d->pos_in_block = 0; 
 					d->parent_dir = fdb;
 					d->dcb = dir_dest;
@@ -351,15 +351,15 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		int next_block = fdb->index.next;
 		DirectoryBlock db;
 		while(next_block != -1){
-			res = DiskDriver_readBlock(disk,dir_dest,next_block);
+			res = DiskDriver_readBlock(disk,dir_dest,next_block,sizeof(FirstDirectoryBlock));
 			if(res == -1){
 				fprintf(stderr, "Errore in SimpleFS_changeDir: errore della readBlock\n");
 				return -1;
 			}
 			for(i = 0; i < dim; i++){
-				if(db.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&dir_dest,db.file_blocks[i])) != -1){
+				if(db.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&dir_dest,db.file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 					if(strcmp(dir_dest->fcb.name,dirname) == 0){
-						DiskDriver_readBlock(disk,dir_dest,db.file_blocks[i]);
+						DiskDriver_readBlock(disk,dir_dest,db.file_blocks[i],sizeof(FirstDirectoryBlock));
 						d->pos_in_block = 0;
 						d->directory = fdb;
 						d->dcb = dir_dest;
