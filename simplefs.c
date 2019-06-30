@@ -112,7 +112,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	newfile->fcb.is_dir = 0;
 	
 	//A. aggiorniamo lo spazio nella directory
-	fdb->file_blocks[fdb->num_entries] = new_block;
+	//fdb->file_blocks[fdb->num_entries] = new_block;			//A. eliminato a seguito del cambiamento fatti nelle struct
 	fdb->num_entries++;
 	
 	//A. Scriviamo su disco il file
