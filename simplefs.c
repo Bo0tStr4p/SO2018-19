@@ -291,7 +291,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 	//A. Confrontando il nome con ".." vedo se il comando inserito mi chiede di andare alla cartella genitore
 	if(strcmp(dirname,"..") == 0){	
 		if(d->dcb->fcb.block_in_disk == 0){ 												//A. Controllo se la directory in cui sto è la root
-			fprintf("Errore in SimpleFS_changeDir: mi trovo nella directory root\n");
+			fprintf(stderr, "Errore in SimpleFS_changeDir: mi trovo nella directory root\n");
 			return -1;
 		}
 		
@@ -310,7 +310,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		FirstDirectoryBlock* parent_directory = malloc(sizeof(FirstDirectoryBlock));
 		res = DiskDriver_readBlock(d->sfs->disk,parent_directory,parent_block);
 		if(res == -1){
-			fprintf("Errore in SimpleFS_changeDir: fallita la lettura del blocco della directory genitore \n");
+			fprintf(stderr, "Errore in SimpleFS_changeDir: fallita la lettura del blocco della directory genitore \n");
 			d->parent_dir = NULL;
 			return -1; 
 		}
@@ -322,7 +322,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 	
 	//A. caso in cui la directory in cui sto dentro è vuota
 	else if(d->dcb->num_entries < 0){ 
-		fprintf("Errore in SimpleFS_changeDir: la directory in cui sto è vuota\n");
+		fprintf(stderr, "Errore in SimpleFS_changeDir: la directory in cui sto è vuota\n");
 		return -1;
 	}
 	else{
@@ -353,7 +353,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		while(next_block != -1){
 			res = DiskDriver_readBlock(disk,dir_dest,next_block);
 			if(res == -1){
-				printf("Errore in SimpleFS_changeDir: errore della readBlock\n");
+				fprintf(stderr, "Errore in SimpleFS_changeDir: errore della readBlock\n");
 				return -1;
 			}
 			for(i = 0; i < dim; i++){
@@ -369,7 +369,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 			}
 			next_block = db.index.next;
 	}
-	printf("Errore: non si può cambiare directory\n");
+	fprintf(stderr, "Errore: non si può cambiare directory\n");
 	return -1;
 
  }
