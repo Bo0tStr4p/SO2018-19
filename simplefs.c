@@ -349,7 +349,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		
 		//A. Il secondo, quello in cui la directory in cui mi sposto è in un diverso blocco indice rispetto alla directory in cui sono
 		int next_block = fdb->index.next;
-		DirectoryBlock db;
+		DirectoryBlock db_tmp;
 		while(next_block != -1){
 			res = DiskDriver_readBlock(disk,dir_dest,next_block,sizeof(FirstDirectoryBlock));
 			if(res == -1){
@@ -357,9 +357,9 @@ int SimpleFS_seek(FileHandle* f, int pos){
 				return -1;
 			}
 			for(i = 0; i < dim; i++){
-				if(db.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&dir_dest,db.file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
+				if(db_tmp.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&dir_dest,db_tmp.file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 					if(strcmp(dir_dest->fcb.name,dirname) == 0){
-						DiskDriver_readBlock(disk,dir_dest,db.file_blocks[i],sizeof(FirstDirectoryBlock));
+						DiskDriver_readBlock(disk,dir_dest,db_tmp.file_blocks[i],sizeof(FirstDirectoryBlock));
 						d->pos_in_block = 0;
 						d->directory = fdb;
 						d->dcb = dir_dest;
@@ -367,12 +367,13 @@ int SimpleFS_seek(FileHandle* f, int pos){
 					}
 				}
 			}
-			next_block = db.index.next;
+			//next_block = db_tmp.index_block.next;
+		}
+		
+		fprintf(stderr, "Errore: non si può cambiare directory\n");
+		return -1;
 	}
-	fprintf(stderr, "Errore: non si può cambiare directory\n");
-	return -1;
-
- }
+}
 
 // creates a new directory in the current one (stored in fs->current_directory_block)
 // 0 on success
