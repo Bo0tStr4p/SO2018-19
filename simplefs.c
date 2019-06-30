@@ -86,12 +86,51 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	SimpleFS* fs = d->sfs;
 	DiskDriver* disk = fs->disk;                   
 	FirstDirectoryBlock* fdb = d->dcb;
-	if(fs == NULL || disk == NULL || fdb == NULL){ 
+	DirectoryBlock* db = d->current_block;
+	if(fs == NULL || disk == NULL || fdb == NULL || db == NULL){ 
 		fprintf(stderr,"Errore nella create file: la DirectoryHandle non è allocata bene\n");
 		return NULL;
+	}
+	
+	//A. Controllo
+	if(fdb->num_entries > 0){
+		
+		FileBlock fb;
+		int i, res, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+		
+		//A. Controllo in questo blocco directory
+		for(i=0; i<dim; i++){
+			if(db->file_blocks[i]>0 && (DiskDriver_readBlock(disk, &fb, db->file_blocks[i], sizeof(FileBlock))) != -1){
+				if(strcmp(fdb->fcb.name,filename) == 0){														//A. Esiste un file con lo stesso nome?
+					fprintf(stderr,"Errore in SimpleFS_createfile: il file esiste già\n");
+					return NULL;
+				}
+			}
+		}
+		
+		//A. continuo a controllare nei prossimi blocchi directory
+		DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
+		while(next_block != NULL){
+			res = DiskDriver_readBlock(disk,next_block,next_block->position,sizeof(DirectoryBlock));
+			if(res == -1){
+				fprintf(stderr, "Errore in simpleFS_createFile: errore nella DiskDriver_readBlock\n");
+				return NULL;
+			}
+			
+			for(i=0; i<dim; i++){
+				if((next_block->file_blocks[i] > 0 && (DiskDriver_readBlock(disk, &fb, next_block->file_blocks[i], sizeof(FileBlock))) != -1)){
+					if(strcmp(fdb->fcb.name,filename) == 0){
+						fprintf(stderr, "Errore in simpleFS_createFile: il file esiste già \n");
+						return NULL;
+					}
+				}
+			}
+			next_next_block = get_next_block_directory(next_block,disk);
+			next_block = next_next_block;
+		}
 	}       
 	
-	//A. Prendiamo dal disco il primo blocco libero
+	//A. Il file non esiste, possiamo crearlo da 0. Prendiamo dal disco il primo blocco libero
 	int new_block = DiskDriver_getFreeBlock(disk,disk->header->first_free_block);
 	if(new_block == -1){
 		fprintf(stderr, "Errore nella createFile: non ci sono blocchi liberi sul disco\n");
@@ -335,7 +374,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		FirstDirectoryBlock* dir_dest = malloc(sizeof(FirstDirectoryBlock));
 		int i,res;
 		int dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
-		for(i = 0; i < dim; i++){
+		for(i=0; i<dim; i++){
 			if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 				if(strcmp(dir_dest->fcb.name,dirname) == 0){
 					DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock));
@@ -355,7 +394,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 				fprintf(stderr, "Errore in SimpleFS_changeDir: errore della readBlock\n");
 				return -1;
 			}
-			for(i = 0; i < dim; i++){
+			for(i=0; i<dim; i++){
 				if(next_block->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,next_block->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 					if(strcmp(dir_dest->fcb.name,dirname) == 0){
 						DiskDriver_readBlock(disk,dir_dest,next_block->file_blocks[i],sizeof(FirstDirectoryBlock));
