@@ -99,7 +99,7 @@ typedef struct {
 typedef struct {
   SimpleFS* sfs;                   // pointer to memory file system structure
   FirstDirectoryBlock* dcb;        // pointer to the first block of the directory(read it)
-  FirstDirectoryBlock* directory;  // pointer to the parent directory (null if top level)
+  FirstDirectoryBlock* parent_dir;  // pointer to the parent directory (null if top level)
   DirectoryBlock* current_block;   // current block in the directory
   int pos_in_dir;                  // absolute position of the cursor in the directory
   int pos_in_block;                // relative position of the cursor in the block
