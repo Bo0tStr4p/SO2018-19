@@ -326,12 +326,12 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		return -1;
 	}
 	else{
-		//A. caso normale in cui mi sposto in una cartella contenuta nella cartella in cui mi trovo
+		//A. caso normale in cui mi sposto semplicemente in un' altra cartella
 		FirstDirectoryBlock* fdb = d->dcb;
 		DirectoryBlock* db = d->current_block;
 		DiskDriver* disk = d->sfs->disk;
 		
-		//A. Ci sono due sottocasi però: il primo, quello in cui la directory in cui mi sposto è nello stesso blocco indice della directory in cui sono
+		//A. Controllo se la cartella in cui mi devo spostare è in questo blocco directory
 		FirstDirectoryBlock* dir_dest = malloc(sizeof(FirstDirectoryBlock));
 		int i,res;
 		int dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
@@ -347,19 +347,18 @@ int SimpleFS_seek(FileHandle* f, int pos){
 			}
 		}
 		
-		//A. Il secondo, quello in cui la directory in cui mi sposto è in un diverso blocco indice rispetto alla directory in cui sono
-		int next_block = fdb->index.next;
-		DirectoryBlock db_tmp;
-		while(next_block != -1){
-			res = DiskDriver_readBlock(disk,dir_dest,next_block,sizeof(FirstDirectoryBlock));
+		//A. Altrimenti continuo a cercare negli altri blocchi directory
+		DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
+		while(next_block != NULL){
+			res = DiskDriver_readBlock(disk,dir_dest,next_block->position,sizeof(FirstDirectoryBlock));
 			if(res == -1){
 				fprintf(stderr, "Errore in SimpleFS_changeDir: errore della readBlock\n");
 				return -1;
 			}
 			for(i = 0; i < dim; i++){
-				if(db_tmp.file_blocks[i] > 0 && (DiskDriver_readBlock(disk,&dir_dest,db_tmp.file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
+				if(next_block->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,next_block->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 					if(strcmp(dir_dest->fcb.name,dirname) == 0){
-						DiskDriver_readBlock(disk,dir_dest,db_tmp.file_blocks[i],sizeof(FirstDirectoryBlock));
+						DiskDriver_readBlock(disk,dir_dest,next_block->file_blocks[i],sizeof(FirstDirectoryBlock));
 						d->pos_in_block = 0;
 						d->parent_dir = fdb;
 						d->dcb = dir_dest;
@@ -367,7 +366,8 @@ int SimpleFS_seek(FileHandle* f, int pos){
 					}
 				}
 			}
-			//next_block = db_tmp.index_block.next;
+			next_next_block = get_next_block_directory(next_block,disk);
+			next_block = next_next_block;
 		}
 		
 		fprintf(stderr, "Errore: non si può cambiare directory\n");
