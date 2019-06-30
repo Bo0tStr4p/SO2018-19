@@ -333,11 +333,11 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		
 		//A. Ci sono due sottocasi però: il primo, quello in cui la directory in cui mi sposto è nello stesso blocco indice della directory in cui sono
 		FirstDirectoryBlock* dir_dest = malloc(sizeof(FirstDirectoryBlock));
-		int i;
+		int i,res;
 		int dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
 		for(i = 0; i < dim; i++){
 			if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
-				if(strncmp(dir_dest->fcb.name,dirname) == 0){
+				if(strcmp(dir_dest->fcb.name,dirname) == 0){
 					DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock));
 					d->pos_in_block = 0; 
 					d->parent_dir = fdb;
@@ -361,7 +361,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 					if(strcmp(dir_dest->fcb.name,dirname) == 0){
 						DiskDriver_readBlock(disk,dir_dest,db_tmp.file_blocks[i],sizeof(FirstDirectoryBlock));
 						d->pos_in_block = 0;
-						d->directory = fdb;
+						d->parent_dir = fdb;
 						d->dcb = dir_dest;
 						return 0;
 					}
