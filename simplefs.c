@@ -283,6 +283,12 @@ int SimpleFS_seek(FileHandle* f, int pos){
 // 0 on success, negative value on error
 // it does side effect on the provided handle
  int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
+ 	if(d == NULL || dirname == NULL){
+		fprintf(stderr,"Errore in SimpleFS_changeDir: inseriti prametri non corretti\n");
+		return -1;
+	}
+	
+ 	
  	return 0;
  }
 
