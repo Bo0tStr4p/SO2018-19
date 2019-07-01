@@ -179,6 +179,55 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
 int SimpleFS_readDir(char** names, DirectoryHandle* d){
+	if(names == NULL || d == NULL){
+		fprintf(stderr, "Errore in SimpleFS_readDir: parametri inseriti non corretti\n");
+		return -1;
+	}
+	
+	DiskDriver* disk = d->sfs->disk;
+	FirstDirectoryBlock *fdb = d->dcb;
+	DirectoryBlock* db = d->current_block;
+	
+	//A. Se la directory è vuota, inutile procedere
+	if(fdb->num_entries < 0){
+		fprintf(stderr, "Errore in SimpleFS_readDir: directory vuota\n");
+		return -1;
+	}
+	
+	int i, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int), dim_names=0;
+	FirstFileBlock ffb_to_check; 
+	
+	//A. Iniziamo a leggere i file contenuti nel blocco directory in cui ci troviamo, cioè d->current_block
+	for (i=0; i<dim; i++){	
+		if (db->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &ffb_to_check, db->file_blocks[i], sizeof(FirstFileBlock)) != -1){ 
+			names[dim_names] = strndup(ffb_to_check.fcb.name, 128); 											//A. Salvo il nome del file che sto leggendo nell'array names
+            dim_names++;
+		}
+	}
+	
+	//A. Caso in cui ci sono file non contenuti nello stesso blocco directory e quindi bisogna cambiare blocco
+	if (fdb->num_entries > i){	
+		
+		DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
+
+		while (next_block != NULL){	 
+			int res = DiskDriver_readBlock(disk, next_block, next_block->position, sizeof(DirectoryBlock)); 
+			if (res == -1){
+				fprintf(stderr, "Errore in SimpleFS_readDir: errore in DiskDriver_readBlock\n");
+				return -1;
+			}
+
+			for (i=0; i<dim; i++){	 
+				if (next_block->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &ffb_to_check, next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){ 
+					names[dim_names] = strndup(ffb_to_check.fcb.name, 128); 											//A. Salvo il nome del file che sto leggendo nell'array names
+                    dim_names++;
+				}
+			}
+			next_next_block = get_next_block_directory(next_block,disk);
+			next_block = next_next_block;
+		}
+	}
+	
 	return 0;
 }
 
