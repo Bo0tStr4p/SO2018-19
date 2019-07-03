@@ -12,20 +12,26 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 	if(fs == NULL || disk == NULL) return NULL;			//A. innanzitutto controllo che fs e disk non siano vuoti
 	
 	fs->disk = disk;
-	FirstDirectoryBlock first_directory_block = {};
-	
+	FirstDirectoryBlock* first_directory_block = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
+	if(first_directory_block == NULL){
+		fprintf(stderr,"Error: could not create first directory block.\n");
+		return NULL;
+	}	
+		
 	int res = DiskDriver_readBlock(disk,&first_directory_block,0, sizeof(FirstDirectoryBlock));
 	if(res == -1){ 										//A. controllo che il blocco sia disponibile. Se non è disponibile, non possiamo andare avanti
-		//printf("Blocco non disponibile\n");
-		//free(first_directory_block);
+		free(first_directory_block);
 		return NULL;
 	};				
 	
-	
-	
 	DirectoryHandle* directory_handle = (DirectoryHandle*)malloc(sizeof(DirectoryHandle));		//A. Il blocco è disponibile, quindi posso allocare la struttura
+	if(directory_handle == NULL){
+		fprintf(stderr,"Error: could not create directory handle.\n");
+		return NULL;
+	}
+	
 	directory_handle->sfs = fs;
-	directory_handle->dcb = &first_directory_block;
+	directory_handle->dcb = first_directory_block;
 	directory_handle->parent_dir = NULL;
 	directory_handle->current_block = NULL;
 	directory_handle->pos_in_dir = 0;
@@ -40,10 +46,13 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 // the current_directory_block is cached in the SimpleFS struct
 // and set to the top level directory
 void SimpleFS_format(SimpleFS* fs){
-	if(fs == NULL) return;
+	if(fs == NULL){
+		fprintf(stderr,"Error: could not format, bad parameters.\n");
+		return;
+	}
 	
 	//A. Creiamo le strutture iniziali
-	FirstDirectoryBlock root_directory = {}; 				//A. Top Level Directory
+	FirstDirectoryBlock root_directory = {0}; 				//A. Top Level Directory
 	root_directory.index.previous = -1;						// Si inserisce il predecessore 
 	root_directory.index.next = -1;							// Essendo appena inizializzato, ancora non c'è un successivo blocco index, quello corrente non è pieno
 	
@@ -189,7 +198,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 	DirectoryBlock* db = d->current_block;
 	
 	//A. Se la directory è vuota, inutile procedere
-	if(fdb->num_entries < 0){
+	if(fdb->num_entries <= 0){
 		fprintf(stderr, "Errore in SimpleFS_readDir: directory vuota\n");
 		return -1;
 	}
