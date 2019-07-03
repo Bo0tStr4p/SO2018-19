@@ -617,13 +617,89 @@ int SimpleFS_seek(FileHandle* f, int pos){
 // 0 on success
 // -1 on error
 int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
+	if(d == NULL || dirname == NULL){
+		fprintf(stderr,"Errore in SimpleFS_mkDir: parametri inseriti non corretti\n");
+		return -1;
+	}
+		
+	int i,res, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	
+	DiskDriver* disk = d->sfs->disk;
+	FirstDirectoryBlock* fdb = d->dcb;
+	DirectoryBlock* db = d->current_block;
+	FirstFileBlock ffb_to_check;
+	
+	//A. Controlliamo prima che la directory che sto creando non esista già
+	if(fdb->num_entries > 0){	
+		for(i=0; i<dim; i++){
+			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
+				if(strcmp(ffb_to_check.fcb.name,dirname) == 0){ 						
+					fprintf(stderr, "Errore in SimpleFS_mkDir: esiste già una directory con lo stesso nome\n");
+					return -1;
+				}
+			}
+		}
+
+		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
+		if(fdb->num_entries > i){
+			DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
+			
+			while(next_block != NULL){
+				res = DiskDriver_readBlock(disk, &ffb_to_check, next_block->position, sizeof(FirstFileBlock));
+				if(res == -1){
+					fprintf(stderr, "Errore in SimpleFS_mkDir: DiskDriver_readBlock non legge\n");
+					return -1;
+				}
+				
+				for(i=0; i<dim; i++){
+					if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
+						if(strcmp(ffb_to_check.fcb.name,dirname) == 0){
+							fprintf(stderr,"Errore in SimpleFS_mkDir: una directory con lo stesso nome è già presente\n");
+							return -1;
+						}
+					}
+				}
+				next_next_block = get_next_block_directory(next_block,disk);
+				next_block = next_next_block;
+			}
+		}
+	}
+	
+	//A. Ora che sappiamo che non esiste un' altra cartella con lo stesso nome, possiamo continuare con la creazione
+	int new_block = DiskDriver_getFreeBlock(disk,disk->header->first_free_block);
+	if(new_block == -1){
+		fprintf(stderr,"Errore in SimpleFS_mkDir: nessun blocco libero restituito da DiskDriver_getFreeBlock\n");
+		return -1;
+	}
+	
+	BlockIndex index_to_assign = fdb->index;
+	
+	FirstDirectoryBlock* new_directory = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
+	
+	new_directory->index = index_to_assign;
+	
+	new_directory->fcb.directory_block = fdb->fcb.block_in_disk;
+	new_directory->fcb.block_in_disk = new_block;
+	strcpy(new_directory->fcb.name, dirname);
+	new_directory->fcb.written_bytes = 0;
+	new_directory->fcb.size_in_bytes = 0;
+	new_directory->fcb.size_in_blocks = 0;
+	new_directory->fcb.is_dir = 1;
+	
+	
+	res = DiskDriver_writeBlock(disk,new_directory,new_block,sizeof(FirstDirectoryBlock)); 
+	if(res == -1){
+		fprintf(stderr,"Errore in SimpleFS_mkDir: scrittura del blocco fallita da DiskDriver_writeBlock\n");
+		return -1;
+	}
+	
 	return 0;
 }
 
 // removes the file in the current directory
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
-int SimpleFS_remove(SimpleFS* fs, char* filename){
+int SimpleFS_remove(SimpleFS* fs, char* filename){	
 	return 0;
 }
 
