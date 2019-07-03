@@ -622,7 +622,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 		return -1;
 	}
 		
-	int i,res, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int i,res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
 	
 	DiskDriver* disk = d->sfs->disk;
 	FirstDirectoryBlock* fdb = d->dcb;
@@ -642,10 +642,11 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 
 		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
 		if(fdb->num_entries > i){
-			DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
+			DirectoryBlock* next_block = get_next_block_directory(db,disk);
+			pos_in_disk = get_position_disk_directory_block(next_block,disk);
 			
 			while(next_block != NULL){
-				res = DiskDriver_readBlock(disk, &ffb_to_check, next_block->position, sizeof(FirstFileBlock));
+				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
 				if(res == -1){
 					fprintf(stderr, "Errore in SimpleFS_mkDir: DiskDriver_readBlock non legge\n");
 					return -1;
@@ -659,8 +660,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 						}
 					}
 				}
-				next_next_block = get_next_block_directory(next_block,disk);
-				next_block = next_next_block;
+				next_block = get_next_block_directory(next_block,disk);
 			}
 		}
 	}
