@@ -91,7 +91,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 		return NULL;
 	}
 	
-	//A. Innanzitutto devo controllare che il file non sia già presente sul disco. Prima ci sono dei controlli
+	//A. Innanzitutto devo controllare che il file non sia già presente sul disco. Prima ci sono dei controlli.
 	SimpleFS* fs = d->sfs;
 	DiskDriver* disk = fs->disk;                   
 	FirstDirectoryBlock* fdb = d->dcb;
@@ -101,43 +101,13 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 		return NULL;
 	}
 	
-	//A. Controllo
-	if(fdb->num_entries > 0){
-		
-		FileBlock fb;
-		int i, res, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
-		
-		//A. Controllo in questo blocco directory
-		for(i=0; i<dim; i++){
-			if(db->file_blocks[i]>0 && (DiskDriver_readBlock(disk, &fb, db->file_blocks[i], sizeof(FileBlock))) != -1){
-				if(strcmp(fdb->fcb.name,filename) == 0){														//A. Esiste un file con lo stesso nome?
-					fprintf(stderr,"Errore in SimpleFS_createfile: il file esiste già\n");
-					return NULL;
-				}
-			}
-		}
-		
-		//A. continuo a controllare nei prossimi blocchi directory
-		DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
-		while(next_block != NULL){
-			res = DiskDriver_readBlock(disk,next_block,next_block->position,sizeof(DirectoryBlock));
-			if(res == -1){
-				fprintf(stderr, "Errore in simpleFS_createFile: errore nella DiskDriver_readBlock\n");
-				return NULL;
-			}
-			
-			for(i=0; i<dim; i++){
-				if((next_block->file_blocks[i] > 0 && (DiskDriver_readBlock(disk, &fb, next_block->file_blocks[i], sizeof(FileBlock))) != -1)){
-					if(strcmp(fdb->fcb.name,filename) == 0){
-						fprintf(stderr, "Errore in simpleFS_createFile: il file esiste già \n");
-						return NULL;
-					}
-				}
-			}
-			next_next_block = get_next_block_directory(next_block,disk);
-			next_block = next_next_block;
-		}
-	}       
+	//A. Controllo.
+	int res;
+	res = SimpleFS_already_exists(disk,fdb,db,(char*)filename);
+	if(res == -1){
+		fprintf(stderr, "Errore in SimpleFS_createFile: l'elemento già esiste opppure la SImpleFS_already_exists restituisce errore");
+		return NULL;
+	}
 	
 	//A. Il file non esiste, possiamo crearlo da 0. Prendiamo dal disco il primo blocco libero
 	int new_block = DiskDriver_getFreeBlock(disk,disk->header->first_free_block);
@@ -709,47 +679,17 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 		return -1;
 	}
 		
-	int i,res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int res;
 	
 	DiskDriver* disk = d->sfs->disk;
 	FirstDirectoryBlock* fdb = d->dcb;
 	DirectoryBlock* db = d->current_block;
-	FirstFileBlock ffb_to_check;
 	
 	//A. Controlliamo prima che la directory che sto creando non esista già
-	if(fdb->num_entries > 0){	
-		for(i=0; i<dim; i++){
-			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
-				if(strcmp(ffb_to_check.fcb.name,dirname) == 0){ 						
-					fprintf(stderr, "Errore in SimpleFS_mkDir: esiste già una directory con lo stesso nome\n");
-					return -1;
-				}
-			}
-		}
-
-		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
-		if(fdb->num_entries > i){
-			DirectoryBlock* next_block = get_next_block_directory(db,disk);
-			pos_in_disk = get_position_disk_directory_block(next_block,disk);
-			
-			while(next_block != NULL){
-				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
-				if(res == -1){
-					fprintf(stderr, "Errore in SimpleFS_mkDir: DiskDriver_readBlock non legge\n");
-					return -1;
-				}
-				
-				for(i=0; i<dim; i++){
-					if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
-						if(strcmp(ffb_to_check.fcb.name,dirname) == 0){
-							fprintf(stderr,"Errore in SimpleFS_mkDir: una directory con lo stesso nome è già presente\n");
-							return -1;
-						}
-					}
-				}
-				next_block = get_next_block_directory(next_block,disk);
-			}
-		}
+	res = SimpleFS_already_exists(disk,fdb,db,dirname);
+	if(res == -1){
+		fprintf(stderr, "Errore in SimpleFS_mkDir: l'elemento già esiste opppure la SImpleFS_already_exists restituisce errore");
+		return -1;
 	}
 	
 	//A. Ora che sappiamo che non esiste un' altra cartella con lo stesso nome, possiamo continuare con la creazione
@@ -1233,6 +1173,56 @@ int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDrive
 		return -1;
 	}
 	return index.blocks[directory_block->position];
+}
+
+// Funzione per cercare se l'elemento (file/directory) con nome elem_name è gia presente sul disco.
+// Restituisce -1 in caso trovi il file/directory sul disco o in caso di errore, altrimenti 0. 
+int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, char* elem_name){
+	if(disk == NULL || fdb == NULL || db == NULL || elem_name == NULL){
+		fprintf(stderr, "Errore in SImpleFS_already_exists: parametri inseriti non corretti\n");
+		return -1;
+	}
+	
+	FirstFileBlock ffb_to_check;
+	int i,res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+
+	
+	//A. Controlliamo prima che la directory che sto creando non esista già
+	if(fdb->num_entries > 0){	
+		for(i=0; i<dim; i++){
+			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
+				if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){ 						
+					//esiste già un elemento con lo stesso nome presente sul disco
+					return -1;
+				}
+			}
+		}
+
+		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
+		if(fdb->num_entries > i){
+			DirectoryBlock* next_block = get_next_block_directory(db,disk);
+			pos_in_disk = get_position_disk_directory_block(next_block,disk);
+			
+			while(next_block != NULL){
+				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
+				if(res == -1){
+					fprintf(stderr, "Errore in SimpleFS_already_exists: DiskDriver_readBlock non legge\n");
+					return -1;
+				}
+				
+				for(i=0; i<dim; i++){
+					if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
+						if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){
+							//esiste già un elemento con lo stesso nome presente sul disco
+							return -1;
+						}
+					}
+				}
+				next_block = get_next_block_directory(next_block,disk);
+			}
+		}
+	}
+	return 0;
 }
 
 void print_index_block(BlockIndex* index){
