@@ -249,13 +249,148 @@ int SimpleFS_close(FileHandle* f){
 // writes in the file, at current position for size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes written
+
+// R. ATTENZIONE -> IN FASE DI TEST BISOGNA CONTROLLARE SE TUTTE LE FREE SONO STATE INSERITE CORRETTAMENTE
+
 int SimpleFS_write(FileHandle* f, void* data, int size){
-	return 0;
+	FirstFileBlock* ffb = f->fcb;
+	
+	int written_bytes = 0,i;
+	int to_write = size; //R. Bytes da scrivere
+	
+	int off = f->pos_in_file;
+	int space_file_block = BLOCK_SIZE - sizeof(int) - sizeof(int); //R. Spazio per ogni File Block
+	
+	FirstFileBlock* first_file = f->fcb; //R. Estraggo il FirstFileBlock
+	DiskDriver* my_disk = f->sfs->disk; //R. Estraggo il disco
+	
+	FileBlock* file_block_tmp = (FileBlock*)malloc(sizeof(FileBlock));
+	if(file_block_tmp == NULL){
+		fprintf(stderr,"Error: malloc of file_block_tmp in SimpleFS_Write.\n");
+		return -1;
+	}
+	
+	//R. Calcolo il blocco al quale devo accedere
+	int index_block_ref = off/(10*space_file_block);
+	int file_index_pos = (off - index_block_ref*space_file_block*10)/space_file_block;
+		
+	BlockIndex index = first_file->index;
+	
+	//R. Calcolo il nuovo offset corretto
+	off = off - index_block_ref*space_file_block*10;
+		
+	//R. mi posiziono al blocco index di riferimento
+	for(i=0;i<index_block_ref;i++){
+		if(DiskDriver_readBlock(my_disk, (void*)&index, index.next, sizeof(BlockIndex)) == -1){
+			fprintf(stderr,"Error, next block in SimpleFs_read.\n");
+			return -1;
+		}
+	}
+	
+	//R. Caso in cui posso scrivere direttamente nel primo blocco
+	if(off < space_file_block){
+		//R. Estraggo il File Block
+		if(DiskDriver_readBlock(my_disk,(void*) file_block_tmp, index.blocks[file_index_pos],sizeof(FileBlock)) == -1){
+			fprintf(stderr,"Error: could not read file block 1.\n");
+			free(file_block_tmp);
+			return -1;
+		}
+		
+		//R. Caso in cui basta solo questo blocco per scrivere il contenuto
+		if(to_write <= space_file_block-off){
+			memcpy(file_block_tmp->data+off, (char*)data, to_write);											
+			written_bytes += to_write;
+			if(f->pos_in_file+written_bytes > ffb->fcb.written_bytes) //R. Aggiorno written_bytes
+				ffb->fcb.written_bytes = f->pos_in_file+written_bytes;
+			if(DiskDriver_updateBlock(my_disk,(void*)file_block_tmp, index.blocks[file_index_pos],sizeof(FileBlock)) == -1){ //R. Aggiorno file block su disco
+				fprintf(stderr,"Error:could not update file block 1.\n");
+				free(file_block_tmp);
+				return -1;
+			}
+			if(DiskDriver_updateBlock(my_disk, ffb, ffb->fcb.block_in_disk,sizeof(FirstFileBlock)) == -1){ //R. Aggiorno il first file block
+				fprintf(stderr,"Error:could not update ffb.\n");
+				free(file_block_tmp);
+				return -1;
+			}
+			free(file_block_tmp);
+			return written_bytes;
+		}
+		//R. Caso in cui devo scrivere nel primo blocco e continuare
+		else{
+			memcpy(file_block_tmp->data+off, (char*)data, space_file_block-off);										
+			written_bytes += space_file_block-off;
+			to_write = size - written_bytes;
+			if(DiskDriver_updateBlock(my_disk,(void*)file_block_tmp, index.blocks[file_index_pos],sizeof(FileBlock)) == -1){ //R. Aggiorno file block su disco
+				fprintf(stderr,"Error:could not update file block 1.\n");
+				free(file_block_tmp);
+				return -1;
+			}
+		}
+	}
+	else{
+		free(file_block_tmp);
+		return -1;
+	}
+	
+	FileBlock* current = file_block_tmp;
+	int block_position;	
+		
+	//R. Vado a scrivere nei successivi blocchi, se necessario
+	while(written_bytes < size && file_block_tmp != NULL){		
+		
+		//R. Creo il blocco successivo per scrivere le informazioni
+		block_position = create_next_file_block(current, file_block_tmp, my_disk);
+		if(block_position == -1){
+			fprintf(stderr,"Error: could not create next file block.\n");
+			free(file_block_tmp);
+			return -1;
+		}
+				
+		//R. Caso in cui posso scrivere tutto sul prossimo blocco
+		if(to_write <= space_file_block-off){											
+			memcpy(file_block_tmp->data, (char*)data + written_bytes, to_write);						
+			written_bytes += to_write;															
+			if(f->pos_in_file+written_bytes > ffb->fcb.written_bytes) //R. Aggiorno written_bytes
+				ffb->fcb.written_bytes = f->pos_in_file+written_bytes;
+			if(DiskDriver_updateBlock(my_disk, ffb, ffb->fcb.block_in_disk, sizeof(FirstFileBlock)) == -1){ //R. Aggiorno il first file block
+				fprintf(stderr,"Error:could not update ffb.\n");
+				free(file_block_tmp);
+				return -1;
+			}
+			if(DiskDriver_writeBlock(my_disk, file_block_tmp, block_position, sizeof(FileBlock)) == -1){
+				fprintf(stderr,"Error:could not write next file block on disk.\n");
+				free(file_block_tmp);
+				return -1;
+			}
+			free(file_block_tmp);
+			return written_bytes;
+		}
+		//R. Caso in cui devo continuare a scrivere anche nel blocchi successivi
+		else{										
+			memcpy(file_block_tmp->data, (char*)data + written_bytes, space_file_block);					
+			written_bytes += space_file_block;														
+			to_write = size - written_bytes;
+			if(DiskDriver_writeBlock(my_disk, file_block_tmp, block_position, sizeof(FileBlock)) == -1){
+				fprintf(stderr,"Error:could not write next file block on disk.\n");
+				free(file_block_tmp);
+				return -1;
+			}
+		}
+		
+		current = file_block_tmp;
+																												
+	}
+
+	free(file_block_tmp);
+	return written_bytes;
 }
 
 // reads in the file, at current position size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes read
+
+// R. ATTENZIONE -> IN FASE DI TEST BISOGNA CONTROLLARE SE TUTTE LE FREE SONO STATE INSERITE CORRETTAMENTE
+
 int SimpleFS_read(FileHandle* f, void* data, int size){
 	FirstFileBlock* first_file = f->fcb; //R. Estraggo il FirstFileBlock
 	DiskDriver* my_disk = f->sfs->disk; //R. Estraggo il disco
