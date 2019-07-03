@@ -245,7 +245,94 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 
 // opens a file in the  directory d. The file should be exisiting
 FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
-	return 0;
+	//R. Verifico le condizioni iniziali
+	if (d == NULL || filename == NULL){
+		fprintf(stderr, "Error:could not open file: Bad Parameters\n");
+        return NULL;
+    }
+
+	int i;
+	FirstDirectoryBlock *first_directory_block = d->dcb; //R. Estraggo il file directory block
+	DiskDriver* disk = d->sfs->disk; //R. Estraggo il disco
+    int space_directory_block = ((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int)); //R. Lo spazio massimo che possiamo avere nei file blocks 
+
+	//R. Caso in cui la directory non è vuota
+	if (first_directory_block->num_entries > 0){
+		//R. Creo il file handle di riferimento
+		FileHandle* file_handle = (FileHandle*)malloc(sizeof(FileHandle));
+		if(file_handle == NULL){
+			fprintf(stderr,"Error: could not create file handle.\n");
+			return NULL;
+		}
+		file_handle->sfs = d->sfs;
+		file_handle->directory = first_directory_block;
+		file_handle->pos_in_file = 0;
+
+		//R. Utilizzo la variabile d'appoggio is_found per verificare se ho trovato o meno il file
+		int is_found = 0;
+		FirstFileBlock* to_check = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
+		if(to_check == NULL){
+			fprintf(stderr,"Error: could not create first file block.\n");
+			free(file_handle);
+			return NULL;
+		}
+
+		//R. Fino a qui
+		
+		//R. Verifico l'esistenza del file nei Directory Block
+		
+		//R. Estraggo il primo Directory Block
+		DirectoryBlock* dir_block = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+		if(dir_block == NULL){
+			fprintf(stderr,"Error: malloc dir_block in open_file.\n");
+			free(file_handle);
+			free(to_check);
+			return NULL;
+		}
+		
+		if(DiskDriver_readBlock(disk, (void*)dir_block, first_directory_block->index.blocks[0], sizeof(DirectoryBlock)) == -1){
+			fprintf(stderr,"Error: read file block 1 in open file.\n");
+			free(file_handle);
+			free(to_check);
+			free(dir_block);
+			return NULL;
+		}
+		
+		//R. Cerco il file
+		while (dir_block != NULL && !is_found){	
+
+            for(i = 0; i < space_directory_block; i++){
+                if(dir_block->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,to_check,dir_block->file_blocks[i],sizeof(FirstFileBlock)) != -1)){ //R. Controllo che il blocco letto abbia del contenuto
+                    if(strncmp(to_check->fcb.name,filename,128) == 0){
+                        is_found = 1;
+        				file_handle->fcb = to_check;
+                        break;
+                    }
+                }
+            }
+
+			//R. Estraggo il Directory Block Successivo
+			dir_block = get_next_block_directory(dir_block, disk);
+		}
+		
+		//R. Verifico se il file è stato trovato e restituisco il suo file handle
+		if (is_found){
+			free(dir_block);
+			return file_handle;
+		} else {
+			fprintf(stderr,"Error, could not open file: file doesn't exist.\n");
+			free(file_handle);
+			free(to_check);
+			free(dir_block);
+			return NULL;
+		}
+
+	//R. Caso in cui la directory è vuota
+	} else { 
+		fprintf(stderr,"Error:could not open file: directory is empty.\n");
+		return NULL;
+	}
+    return NULL;
 }
 
 
