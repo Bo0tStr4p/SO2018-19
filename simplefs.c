@@ -217,10 +217,13 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 	//A. Caso in cui ci sono file non contenuti nello stesso blocco directory e quindi bisogna cambiare blocco
 	if (fdb->num_entries > i){	
 		
-		DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
+		int res, pos_in_disk;
+		DirectoryBlock* next_block = get_next_block_directory(db,disk);
 
 		while (next_block != NULL){	 
-			int res = DiskDriver_readBlock(disk, next_block, next_block->position, sizeof(DirectoryBlock)); 
+			pos_in_disk = get_position_disk_directory_block(next_block,disk);
+			
+			res = DiskDriver_readBlock(disk, next_block, pos_in_disk, sizeof(DirectoryBlock)); 
 			if (res == -1){
 				fprintf(stderr, "Errore in SimpleFS_readDir: errore in DiskDriver_readBlock\n");
 				return -1;
@@ -232,8 +235,7 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
                     dim_names++;
 				}
 			}
-			next_next_block = get_next_block_directory(next_block,disk);
-			next_block = next_next_block;
+			next_block = get_next_block_directory(next_block,disk);
 		}
 	}
 	
