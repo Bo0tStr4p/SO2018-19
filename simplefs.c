@@ -700,6 +700,88 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
 int SimpleFS_remove(DirectoryHandle* d, char* filename){	
+	if(d == NULL || filename == NULL){
+		fprintf(stderr,"Errore in SimpleFS_remove: parametri inseriti non corretti\n");
+		return -1;
+	}
+		
+	int i,res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int pos = -1;
+	
+	DiskDriver* disk = d->sfs->disk;
+	FirstDirectoryBlock* fdb = d->dcb;
+	DirectoryBlock* db = d->current_block;
+	FirstFileBlock ffb_to_check;
+	
+	//A. Controllo se la directory è vuota. Se lo è inutile continuare, non c'è nulla da rimuovere
+	if(fdb->num_entries < 1){
+		fprintf(stderr,"Errore in SimpleFS_remove: non ci sono files da rimuovere, la directory è vuota\n");
+		return -1;
+	}
+	
+	//A. La directory non è vuota. Inizio a cercare il file nei blocchi directory
+	for(i=0; i<dim; i++){
+		if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
+			if(strcmp(ffb_to_check.fcb.name,filename) == 0){
+				pos = db->file_blocks[i];
+				break;
+			}
+		}
+	}
+	/*
+	//A. Non abbiamo trovato il file e abbiamo controllato tutto lo spazio nella directory. Vuol dire che il file non è in questa directory, inutile procedere
+	if(pos==0 && fdb->num_entries==i){
+		fprintf(stderr,"Errore in SimpleFS_remove: il file non si trova in questa directory\n");
+		return -1;
+	}
+	*/
+	
+	//A. Non abbiamo trovato il file ma possiamo controllare in altri blocchi directory
+	if(pos==-1 && fdb->num_entries > i){
+			DirectoryBlock* next_block = get_next_block_directory(db,disk);
+			pos_in_disk = get_position_disk_directory_block(next_block,disk);
+			
+			while(next_block != NULL){
+				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
+				if(res == -1){
+					fprintf(stderr, "Errore in SimpleFS_mkDir: DiskDriver_readBlock non legge\n");
+					return -1;
+				}
+				
+				for(i=0; i<dim; i++){
+					if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
+						if(strcmp(ffb_to_check.fcb.name,filename) == 0){
+							pos = next_block->file_blocks[i];
+							break;
+						}
+					}
+				}
+				next_block = get_next_block_directory(next_block,disk);
+			}
+	}
+	//A. Non abbiamo trovato il file e abbiamo controllato tutto lo spazio nella directory. Vuol dire che il file non è in questa directory, inutile procedere
+	if(pos==-1){
+		fprintf(stderr,"Errore in SimpleFS_remove: il file non si trova in questa directory\n");
+		return -1;
+	}
+	
+	
+	FirstFileBlock ffb_toRemove;
+	
+	res = DiskDriver_readBlock(disk,&ffb_toRemove,pos,sizeof(FirstFileBlock));
+	if(res == -1){
+		fprintf(stderr,"Errore in SimpleFS_remove: lettura del file fallita\n");
+		return -1;
+	};
+	
+	int isDir = ffb_toRemove.fcb.is_dir;
+	
+	//A. Verifico se sto rimuovendo un file o una cartella e mi regolo di conseguenza
+	if(isDir == 0){
+		//todo
+		return 0;
+	}
+	
 	return 0;
 }
 
