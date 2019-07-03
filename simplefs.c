@@ -542,7 +542,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		//A. leggo dal disco il blocco della directory genitore. Se la lettura va a buon fine assegno al dir_handle la cartella genitore aggiornata
 		int res;
 		FirstDirectoryBlock* parent_directory = malloc(sizeof(FirstDirectoryBlock));
-		res = DiskDriver_readBlock(d->sfs->disk,parent_directory,parent_block,sizeof(FirstDirectoryBlock));
+		res = DiskDriver_readBlock(d->sfs->disk, parent_directory, parent_block, sizeof(FirstDirectoryBlock));
 		if(res == -1){
 			fprintf(stderr, "Errore in SimpleFS_changeDir: fallita la lettura del blocco della directory genitore \n");
 			d->parent_dir = NULL;
@@ -569,6 +569,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		FirstDirectoryBlock* dir_dest = malloc(sizeof(FirstDirectoryBlock));
 		int i,res;
 		int dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+		
 		for(i=0; i<dim; i++){
 			if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 				if(strcmp(dir_dest->fcb.name,dirname) == 0){
@@ -582,9 +583,13 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		}
 		
 		//A. Altrimenti continuo a cercare negli altri blocchi directory
-		DirectoryBlock* next_block = get_next_block_directory(db,disk), *next_next_block = NULL;
+		int pos_in_disk;
+		DirectoryBlock* next_block = get_next_block_directory(db,disk);
+		
 		while(next_block != NULL){
-			res = DiskDriver_readBlock(disk,dir_dest,next_block->position,sizeof(FirstDirectoryBlock));
+			pos_in_disk = get_position_disk_directory_block(next_block,disk);
+			
+			res = DiskDriver_readBlock(disk,dir_dest,pos_in_disk,sizeof(FirstDirectoryBlock));
 			if(res == -1){
 				fprintf(stderr, "Errore in SimpleFS_changeDir: errore della readBlock\n");
 				return -1;
@@ -600,8 +605,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 					}
 				}
 			}
-			next_next_block = get_next_block_directory(next_block,disk);
-			next_block = next_next_block;
+			next_block = get_next_block_directory(next_block,disk);
 		}
 		
 		fprintf(stderr, "Errore: non si può cambiare directory\n");
