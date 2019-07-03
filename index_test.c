@@ -199,6 +199,10 @@ int main(int argc, char** argv){
 	
 	
 	FileBlock* file_block_tmp = (FileBlock*)malloc(sizeof(FileBlock));
+	if(file_block_tmp == NULL){
+		fprintf(stderr,"Error: malloc on file block tmp.\n");
+		return -1;
+	}
 	
 	for(i=1;i<15;i++){
 		
