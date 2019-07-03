@@ -964,6 +964,26 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 
 }
 
+// Funzione per ottenere la posizione nel disco di un file block
+int get_position_disk_file_block(FileBlock* file_block, DiskDriver* disk){
+	BlockIndex index;
+	if(DiskDriver_readBlock(disk, &index, file_block->index_block, sizeof(BlockIndex)) == -1){
+		fprintf(stderr,"Error: could not read block index.\n");
+		return -1;
+	}
+	return index.blocks[file_block->position];
+}
+
+// Funzione per ottenere la posizione nel disco di un directory block
+int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDriver* disk){
+	BlockIndex index;
+	if(DiskDriver_readBlock(disk, &index, directory_block->index_block, sizeof(BlockIndex)) == -1){
+		fprintf(stderr,"Error: could not read block index.\n");
+		return -1;
+	}
+	return index.blocks[directory_block->position];
+}
+
 void print_index_block(BlockIndex* index){
 	printf("============ INDEX BLOCK ============\n");
 	printf("Block_index_information:\n");
@@ -975,4 +995,6 @@ void print_index_block(BlockIndex* index){
 	printf("Next: %d\n",index->next);
 	printf("=====================================\n");
 }
+
+
   

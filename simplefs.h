@@ -194,5 +194,11 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 
 void print_index_block(BlockIndex* index);
 
+// Funzione per ottenere la posizione nel disco di un file block
+int get_position_disk_file_block(FileBlock* file_block, DiskDriver* disk);
+
+// Funzione per ottenere la posizione nel disco di un directory block
+int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDriver* disk);
+
   
 
