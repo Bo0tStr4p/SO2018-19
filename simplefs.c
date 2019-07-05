@@ -1318,9 +1318,10 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
 		if(fdb->num_entries > i){
 			DirectoryBlock* next_block = get_next_block_directory(db,disk);
-			pos_in_disk = get_position_disk_directory_block(next_block,disk);
 			
 			while(next_block != NULL){
+				pos_in_disk = get_position_disk_directory_block(next_block,disk);
+				
 				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
 				if(res == -1){
 					fprintf(stderr, "Errore in SimpleFS_already_exists: DiskDriver_readBlock non legge\n");
