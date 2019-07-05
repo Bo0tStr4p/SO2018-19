@@ -797,18 +797,135 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 	
 	res = DiskDriver_readBlock(disk,&ffb_toRemove,pos,sizeof(FirstFileBlock));
 	if(res == -1){
-		fprintf(stderr,"Errore in SimpleFS_remove: lettura del file fallita\n");
+		fprintf(stderr,"Errore in SimpleFS_remove: lettura del FirstFileBlock fallita\n");
 		return -1;
 	};
 	
 	int isDir = ffb_toRemove.fcb.is_dir;
 	
 	//A. Verifico se sto rimuovendo un file o una cartella e mi regolo di conseguenza
+	//A. Non sono per niente sicuro sia corretto. Probabilmente dovrà essere fixato.
+	//A. Il problema è che vado a leggere un FileBlock nella stessa posizione in cui leggo prima il FirstFileBlock.
 	if(isDir == 0){
-		//todo
+		FileBlock current_fb;
+		int fb_pos_in_disk = pos; 			//A. non vado ad alterare pos perchè mi servirà dopo per liberare il FirstFileBlock che è in posizione pos sul disco.
+		
+		//A. leggo uno dei FileBlock
+		res = DiskDriver_readBlock(disk, &current_fb, fb_pos_in_disk, sizeof(FileBlock));
+		if(res == -1){
+			fprintf(stderr,"Errore in SimpleFS_remove: lettura del FileBlock fallita\n");
+			return -1;
+		}
+		
+		FileBlock* next_block = get_next_block_file(&current_fb,disk);
+		
+		//A. elimino tutti i FileBlock del file
+		while(next_block != NULL){
+			fb_pos_in_disk = get_position_disk_file_block(next_block,disk);
+				
+			res = DiskDriver_readBlock(disk, &current_fb, fb_pos_in_disk, sizeof(FileBlock));
+			if(res == -1){
+				fprintf(stderr, "Errore in SimpleFS_remove: DiskDriver_readBlock non legge\n");
+				return -1;
+			}
+			next_block = get_next_block_file(next_block,disk);
+				
+			res = DiskDriver_freeBlock(disk,fb_pos_in_disk);
+			if(res == -1){
+				fprintf(stderr, "Errore in SimpleFS_remove: blocco in posizione fb_pos_in_disk non liberato\n");
+				return -1;
+			}
+		}
+		
+		res = DiskDriver_freeBlock(disk,pos);
+		if(res == -1){
+			fprintf(stderr, "Errore in SimpleFS_remove: FirstFileBlock in posizione pos non liberato\n");
+			return -1;
+		}
+		
+		d->dcb = fdb; //A. ripristino la directory che precedentemente ho scorso
+		
 		return 0;
 	}
-	
+	//A. sto eliminando invece una directory
+	else{
+		FirstDirectoryBlock fdb_toRemove;
+		res = DiskDriver_readBlock(disk, &fdb_toRemove,pos, sizeof(FirstDirectoryBlock));
+		if(res == -1){
+			fprintf(stderr,"Errore in SimpleFS_remove: lettura del FirstDirectoryBlock fallita\n");
+			return -1;
+		}
+		
+		//A. La directory contiene elementi al suo interno
+		if(fdb_toRemove.num_entries > 0){
+			
+			//A. Stesso problema di prima: vado a leggere un DirectoryBlock nella stessa posizione in cui leggo prima il FirstDirectoryBlock.
+			DirectoryBlock current_db;
+			int db_pos_in_disk = pos;								//A. non vado ad alterare pos perchè mi servirà dopo per liberare il FirstDirectoryBlock che è in posizione pos sul disco.
+			
+			
+			res = DiskDriver_readBlock(disk,&current_db,db_pos_in_disk,sizeof(DirectoryBlock));
+			if(res == -1){
+				return -1;
+			}
+			
+			//A. ricorsivamente elimino tutti i file
+			for(i=0; i<dim; i++){
+				FirstFileBlock ffb;
+				if(current_db.file_blocks[i] > 0 && DiskDriver_readBlock(disk, &ffb, current_db.file_blocks[i], sizeof(FirstFileBlock)) != -1)
+					SimpleFS_remove(d,ffb.fcb.name); 
+			}
+			
+			//A. Non ho eliminato tutti gli elementi. Continuo.
+			if(fdb_toRemove.num_entries > i){
+				FirstFileBlock ffb;
+				DirectoryBlock* next_block = get_next_block_directory(&current_db,disk);
+			
+				while(next_block != NULL){
+					db_pos_in_disk = get_position_disk_directory_block(next_block,disk);
+					
+					res = DiskDriver_readBlock(disk, &ffb, db_pos_in_disk, sizeof(FirstFileBlock));
+					if(res == -1){
+						fprintf(stderr, "Errore in SimpleFS_remove: DiskDriver_readBlock non legge\n");
+						return -1;
+					}
+				
+					for(i=0; i<dim; i++){
+						if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb, next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
+							fprintf(stderr, "Errore in SimpleFS_remove: DiskDriver_readBlock non legge\n");
+							return -1;
+						}
+						SimpleFS_remove(d,ffb.fcb.name);
+					}
+					next_block = get_next_block_directory(next_block,disk);
+					
+					res = DiskDriver_freeBlock(disk,db_pos_in_disk);
+					if(res == -1){
+						fprintf(stderr, "Errore in SimpleFS_remove: blocco in posizione db_pos_in_disk non liberato\n");
+						return -1;
+					}
+				}
+				
+				res = DiskDriver_freeBlock(disk,pos);
+				if(res == -1){
+					fprintf(stderr, "Errore in SimpleFS_remove: FirstDirectoryBlock in posizione pos non liberato\n");
+					return -1;
+				}
+				
+				d->dcb = fdb; //A. ripristino la directory che precedentemente ho scorso
+				return 0;
+			} 
+		}
+		//A. La directory che sto eliminando non contiene nulla al suo interno
+		else{
+			res = DiskDriver_freeBlock(disk, pos);
+			if(res == -1){
+				fprintf(stderr, "Errore in SimpleFS_remove: FirstDirectoryBlock in posizione pos non liberato\n");
+			}
+			d->dcb = fdb;
+			return 0;
+		}
+	}
 	return 0;
 }
 
