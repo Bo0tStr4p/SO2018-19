@@ -14,7 +14,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 	fs->disk = disk;
 	FirstDirectoryBlock* first_directory_block = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
 	if(first_directory_block == NULL){
-		fprintf(stderr,"Error: could not create first directory block.\n");
+		fprintf(stderr, "Error in SimpleFS_init: could not create first directory block.\n");
 		return NULL;
 	}	
 		
@@ -26,7 +26,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 	
 	DirectoryHandle* directory_handle = (DirectoryHandle*)malloc(sizeof(DirectoryHandle));		//A. Il blocco è disponibile, quindi posso allocare la struttura
 	if(directory_handle == NULL){
-		fprintf(stderr,"Error: could not create directory handle.\n");
+		fprintf(stderr, "Error in SImpleFS_init: could not create directory handle.\n");
 		return NULL;
 	}
 	
@@ -47,7 +47,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 // and set to the top level directory
 void SimpleFS_format(SimpleFS* fs){
 	if(fs == NULL){
-		fprintf(stderr,"Error: could not format, bad parameters.\n");
+		fprintf(stderr, "Error in SImpleFS_format: could not format, bad parameters.\n");
 		return;
 	}
 	
@@ -76,7 +76,7 @@ void SimpleFS_format(SimpleFS* fs){
 	
 	int ret = DiskDriver_writeBlock(fs->disk, &root_directory, 0, sizeof(FirstDirectoryBlock));		//A. vado a scrivere sul disco la root directory
 	if (ret == -1){
-		fprintf(stderr, "Errore nella format: impossibile formattare\n");
+		fprintf(stderr, "Errore in SimpleFS_format: impossibile formattare\n");
 		//free(root_directory);
 	}
 	return;
@@ -87,7 +87,7 @@ void SimpleFS_format(SimpleFS* fs){
 // an empty file consists only of a block of type FirstBlock
 FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	if(d == NULL || filename == NULL){ 
-		fprintf(stderr,"Errore nella create file: inseriti prametri non corretti\n");
+		fprintf(stderr,"Errore in SimpleFS_createFile: inseriti prametri non corretti\n");
 		return NULL;
 	}
 	
@@ -97,7 +97,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	FirstDirectoryBlock* fdb = d->dcb;
 	DirectoryBlock* db = d->current_block;
 	if(fs == NULL || disk == NULL || fdb == NULL || db == NULL){ 
-		fprintf(stderr,"Errore nella create file: la DirectoryHandle non è allocata bene\n");
+		fprintf(stderr,"Errore in SimpleFS_createFile: la DirectoryHandle non è allocata bene\n");
 		return NULL;
 	}
 	
@@ -136,7 +136,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	//A. Scriviamo su disco il file
 	ret = DiskDriver_writeBlock(disk, file_to_create ,new_block, sizeof(FirstFileBlock));
 	if(ret == -1){
-		fprintf(stderr, "Errore nella createFile: impossibile scrivere sul disco");
+		fprintf(stderr, "Errore in SimpleFS_createFile: impossibile scrivere sul disco");
 		return NULL;
 	}
 	
@@ -764,55 +764,6 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		fprintf(stderr, "Errore in SimpleFS_remove: l'elemento che si sta cercando non è in questa directory");
 		return -1;
 	}
-	
-	/*
-	for(i=0; i<dim; i++){
-		if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
-			if(strcmp(ffb_to_check.fcb.name,filename) == 0){
-				pos = db->file_blocks[i];
-				break;
-			}
-		}
-	}
-	
-	
-	//A. Non abbiamo trovato il file e abbiamo controllato tutto lo spazio nella directory. Vuol dire che il file non è in questa directory, inutile procedere
-	//if(pos==0 && fdb->num_entries==i){
-		//fprintf(stderr,"Errore in SimpleFS_remove: il file non si trova in questa directory\n");
-		//return -1;
-	//}
-	
-	
-	//A. Non abbiamo trovato il file ma possiamo controllare in altri blocchi directory
-	if(pos==-1 && fdb->num_entries > i){
-			DirectoryBlock* next_block = get_next_block_directory(db,disk);
-			pos_in_disk = get_position_disk_directory_block(next_block,disk);
-			
-			while(next_block != NULL){
-				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
-				if(res == -1){
-					fprintf(stderr, "Errore in SimpleFS_mkDir: DiskDriver_readBlock non legge\n");
-					return -1;
-				}
-				
-				for(i=0; i<dim; i++){
-					if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
-						if(strcmp(ffb_to_check.fcb.name,filename) == 0){
-							pos = next_block->file_blocks[i];
-							break;
-						}
-					}
-				}
-				next_block = get_next_block_directory(next_block,disk);
-			}
-	}
-	
-	//A. Non abbiamo trovato il file e abbiamo controllato tutto lo spazio nella directory. Vuol dire che il file non è in questa directory, inutile procedere
-	if(pos==-1){
-		fprintf(stderr,"Errore in SimpleFS_remove: il file non si trova in questa directory\n");
-		return -1;
-	}
-	*/
 	
 	FirstFileBlock ffb_toRemove;
 	
