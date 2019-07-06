@@ -204,5 +204,6 @@ int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDrive
 // Restituisce -1 in caso trovi il file/directory sul disco o in caso di errore, altrimenti 0. 
 int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, char* elem_name);
 
-// Funzione per mettere un elemento (file/directory), che sto creando, in un Blocco Directory.  
+// Funzione per mettere un elemento (file/directory), che sto creando, in un Blocco Directory.
+// Restituisce 0 in caso l'operazione vada a buon fine, -1 in caso di errore.  
 int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, int new_block);

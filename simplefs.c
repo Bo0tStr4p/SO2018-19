@@ -1351,7 +1351,12 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 }
 
 int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, int new_block){
-
+	if(disk == NULL || fdb == NULL || db == NULL || new_block < 0){
+		fprintf(stderr, "Errore in SimpleFS_assignDirectory: parametri inseriti non corretti");
+		return -1;
+	}
+	
+	
 	DirectoryBlock db_temp;
 	int i, res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
 	int block_free = 0;
@@ -1376,7 +1381,7 @@ int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, Directo
 				
 				res = DiskDriver_readBlock(disk, &db_temp, pos_in_disk,sizeof(DirectoryBlock));
 				if(res == -1){
-					fprintf(stderr, "SimpleFS_createFile: lettura del blocco next_block fallita\n");
+					fprintf(stderr, "Errore in SimpleFS_assignDirectory: lettura del blocco next_block fallita\n");
 					DiskDriver_freeBlock(disk, fdb->fcb.block_in_disk);
 					return -1;
 				}
@@ -1402,14 +1407,14 @@ int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, Directo
 
 		int db_to_create_posInDisk = DiskDriver_freeBlock(disk, disk->header->first_free_block); 
 		if(db_to_create_posInDisk == -1){
-			fprintf(stderr, "Errore in SimpleFS_CreateFile: impossibile assegnare blocco libero alla db \n");
+			fprintf(stderr, "Errore in SimpleFS_assignDirectory: impossibile assegnare blocco libero al db \n");
 			DiskDriver_freeBlock(disk,fdb->fcb.block_in_disk);
 			return -1;
 		}
 		
 		res = DiskDriver_writeBlock(disk, &db_to_create, db_to_create_posInDisk, sizeof(DirectoryBlock)); 
 		if(res == -1){
-			fprintf(stderr, "Errore in SimpleFS_createFile: impossibile scrivere il nuovo blocco da assegnare alla db\n");
+			fprintf(stderr, "Errore in SimpleFS_assignDirectory: impossibile scrivere il nuovo blocco da assegnare al db\n");
 			DiskDriver_freeBlock(disk,fdb->fcb.block_in_disk);
 			return -1;
 		}
