@@ -708,22 +708,28 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 	
 	BlockIndex index_to_assign = fdb->index;
 	
-	FirstDirectoryBlock* new_directory = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
+	FirstDirectoryBlock* dir_to_create = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
 	
-	new_directory->index = index_to_assign;
+	dir_to_create->index = index_to_assign;
 	
-	new_directory->fcb.directory_block = fdb->fcb.block_in_disk;
-	new_directory->fcb.block_in_disk = new_block;
-	strcpy(new_directory->fcb.name, dirname);
-	new_directory->fcb.written_bytes = 0;
-	new_directory->fcb.size_in_bytes = 0;
-	new_directory->fcb.size_in_blocks = 0;
-	new_directory->fcb.is_dir = 1;
+	dir_to_create->fcb.directory_block = fdb->fcb.block_in_disk;
+	dir_to_create->fcb.block_in_disk = new_block;
+	strcpy(dir_to_create->fcb.name, dirname);
+	dir_to_create->fcb.written_bytes = 0;
+	dir_to_create->fcb.size_in_bytes = 0;
+	dir_to_create->fcb.size_in_blocks = 0;
+	dir_to_create->fcb.is_dir = 1;
 	
 	
-	res = DiskDriver_writeBlock(disk,new_directory,new_block,sizeof(FirstDirectoryBlock)); 
+	res = DiskDriver_writeBlock(disk,dir_to_create,new_block,sizeof(FirstDirectoryBlock)); 
 	if(res == -1){
 		fprintf(stderr,"Errore in SimpleFS_mkDir: scrittura del blocco fallita da DiskDriver_writeBlock\n");
+		return -1;
+	}
+	
+	res = SimpleFS_assignDirectory(disk,fdb,db,new_block);
+	if(res == -1){
+		fprintf(stderr, "Errore in SimpleFS_mkDir: impossibile assegnare spazio della nuova directory in una directory");
 		return -1;
 	}
 	
