@@ -745,13 +745,12 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		return -1;
 	}
 		
-	int i,res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int i,res, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
 	int pos = -1;
 	
 	DiskDriver* disk = d->sfs->disk;
 	FirstDirectoryBlock* fdb = d->dcb;
 	DirectoryBlock* db = d->current_block;
-	FirstFileBlock ffb_to_check;
 	
 	//A. Controllo se la directory è vuota. Se lo è inutile continuare, non c'è nulla da rimuovere
 	if(fdb->num_entries < 1){
@@ -759,7 +758,14 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		return -1;
 	}
 	
-	//A. La directory non è vuota. Inizio a cercare il file nei blocchi directory
+	//A. La directory non è vuota. Cerco il file nei blocchi directory
+	pos = SimpleFS_already_exists(disk,fdb,db,filename);
+	if(pos == -1){
+		fprintf(stderr, "Errore in SimpleFS_remove: l'elemento che si sta cercando non è in questa directory");
+		return -1;
+	}
+	
+	/*
 	for(i=0; i<dim; i++){
 		if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
 			if(strcmp(ffb_to_check.fcb.name,filename) == 0){
@@ -768,13 +774,14 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			}
 		}
 	}
-	/*
+	
+	
 	//A. Non abbiamo trovato il file e abbiamo controllato tutto lo spazio nella directory. Vuol dire che il file non è in questa directory, inutile procedere
-	if(pos==0 && fdb->num_entries==i){
-		fprintf(stderr,"Errore in SimpleFS_remove: il file non si trova in questa directory\n");
-		return -1;
-	}
-	*/
+	//if(pos==0 && fdb->num_entries==i){
+		//fprintf(stderr,"Errore in SimpleFS_remove: il file non si trova in questa directory\n");
+		//return -1;
+	//}
+	
 	
 	//A. Non abbiamo trovato il file ma possiamo controllare in altri blocchi directory
 	if(pos==-1 && fdb->num_entries > i){
@@ -799,12 +806,13 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 				next_block = get_next_block_directory(next_block,disk);
 			}
 	}
+	
 	//A. Non abbiamo trovato il file e abbiamo controllato tutto lo spazio nella directory. Vuol dire che il file non è in questa directory, inutile procedere
 	if(pos==-1){
 		fprintf(stderr,"Errore in SimpleFS_remove: il file non si trova in questa directory\n");
 		return -1;
 	}
-	
+	*/
 	
 	FirstFileBlock ffb_toRemove;
 	
@@ -1306,7 +1314,7 @@ int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDrive
 }
 
 // Funzione per cercare se l'elemento (file/directory) con nome elem_name è gia presente sul disco.
-// Restituisce la posizione dell'elemento nel blocco directory in caso trovi l'elemento (file/directory) sul disco, -1 in caso di errore, altrimenti 0. 
+// Restituisce la posizione dell'elemento nel blocco directory in caso trovi l'elemento (file/directory) sul disco, -1 in caso non la trovi o di errore. 
 int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, char* elem_name){
 	if(disk == NULL || fdb == NULL || db == NULL || elem_name == NULL){
 		fprintf(stderr, "Errore in SImpleFS_already_exists: parametri inseriti non corretti\n");
@@ -1355,7 +1363,7 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 			}
 		}
 	}
-	return 0;
+	return -1;
 }
 
 int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, int new_block){
