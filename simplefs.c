@@ -1306,7 +1306,7 @@ int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDrive
 }
 
 // Funzione per cercare se l'elemento (file/directory) con nome elem_name è gia presente sul disco.
-// Restituisce -1 in caso trovi il file/directory sul disco o in caso di errore, altrimenti 0. 
+// Restituisce la posizione dell'elemento nel blocco directory in caso trovi l'elemento (file/directory) sul disco, -1 in caso di errore, altrimenti 0. 
 int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, char* elem_name){
 	if(disk == NULL || fdb == NULL || db == NULL || elem_name == NULL){
 		fprintf(stderr, "Errore in SImpleFS_already_exists: parametri inseriti non corretti\n");
@@ -1314,7 +1314,7 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 	}
 	
 	FirstFileBlock ffb_to_check;
-	int i,res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int i,res, pos_in_disk, elem_pos, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
 
 	
 	//A. Controlliamo prima che la directory che sto creando non esista già
@@ -1323,7 +1323,8 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
 				if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){ 						
 					//esiste già un elemento con lo stesso nome presente sul disco
-					return -1;
+					elem_pos = db->file_blocks[i];
+					return elem_pos;
 				}
 			}
 		}
@@ -1345,7 +1346,8 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 					if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
 						if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){
 							//esiste già un elemento con lo stesso nome presente sul disco
-							return -1;
+							elem_pos = db->file_blocks[i];
+							return elem_pos;
 						}
 					}
 				}

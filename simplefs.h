@@ -201,7 +201,7 @@ int get_position_disk_file_block(FileBlock* file_block, DiskDriver* disk);
 int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDriver* disk);
 
 // Funzione per cercare se l'elemento (file/directory) con nome elem_name è gia presente sul disco.
-// Restituisce -1 in caso trovi il file/directory sul disco o in caso di errore, altrimenti 0. 
+// Restituisce la posizione dell'elemento nel blocco directory in caso trovi l'elemento (file/directory) sul disco, -1 in caso di errore, altrimenti 0. 
 int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, char* elem_name);
 
 // Funzione per mettere un elemento (file/directory), che sto creando, in un Blocco Directory.
