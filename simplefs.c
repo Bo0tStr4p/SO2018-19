@@ -102,9 +102,9 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	}
 	
 	//A. Controllo.
-	int res;
-	res = SimpleFS_already_exists(disk,fdb,db,(char*)filename);
-	if(res == -1){
+	int ret;
+	ret = SimpleFS_already_exists(disk,fdb,db,(char*)filename);
+	if(ret == -1){
 		fprintf(stderr, "Errore in SimpleFS_createFile: l'elemento già esiste opppure la SImpleFS_already_exists restituisce errore");
 		return NULL;
 	}
@@ -117,40 +117,47 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	}
 	
 	//A. creiamo il primo blocco del file
-	FirstFileBlock* newfile = malloc(sizeof(FirstFileBlock));   
-	newfile->index.previous = -1;
-	newfile->index.next = -1;
+	FirstFileBlock* file_to_create = malloc(sizeof(FirstFileBlock));   
+	file_to_create->index.previous = -1;
+	file_to_create->index.next = -1;
 	
-	newfile->fcb.directory_block = fdb->fcb.block_in_disk;
-	newfile->fcb.block_in_disk = new_block; 					//A. gli assegno il blocco libero sul disco ottenuto dalla getFreeBlock
-	strcpy(newfile->fcb.name,filename);
-	newfile->fcb.written_bytes = 0;
-	newfile->fcb.size_in_bytes = 0;
-	newfile->fcb.size_in_blocks = 0;
-	newfile->fcb.is_dir = 0;
+	file_to_create->fcb.directory_block = fdb->fcb.block_in_disk;
+	file_to_create->fcb.block_in_disk = new_block; 					//A. gli assegno il blocco libero sul disco ottenuto dalla getFreeBlock
+	strcpy(file_to_create->fcb.name,filename);
+	file_to_create->fcb.written_bytes = 0;
+	file_to_create->fcb.size_in_bytes = 0;
+	file_to_create->fcb.size_in_blocks = 0;
+	file_to_create->fcb.is_dir = 0;
 	
 	//A. aggiorniamo lo spazio nella directory
 	//fdb->file_blocks[fdb->num_entries] = new_block;			//A. eliminato a seguito del cambiamento fatti nelle struct
 	fdb->num_entries++;
 	
 	//A. Scriviamo su disco il file
-	int ret;
-	ret = DiskDriver_writeBlock(disk,newfile,new_block, sizeof(FirstFileBlock));
+	ret = DiskDriver_writeBlock(disk, file_to_create ,new_block, sizeof(FirstFileBlock));
 	if(ret == -1){
 		fprintf(stderr, "Errore nella createFile: impossibile scrivere sul disco");
 		return NULL;
 	}
 	
-	FileBlock* file_block = malloc(sizeof(FileBlock));
-	file_block->index_block = 0;
-	file_block->position = 0;
+	//A. Non sono sicuro vada inizializzato
+	//FileBlock* file_block = malloc(sizeof(FileBlock));
+	//file_block->index_block = 0;
+	//file_block->position = 0;
 	//file_block->data = NULL;
+	
+	//A. Dobbiamo mettere il file in un blocco directory.
+	ret = SimpleFS_assignDirectory(disk,fdb,db,new_block);
+	if(ret == -1){
+		fprintf(stderr, "Errore in SimpleFS_createFile: impossibile assegnare spazio per il file in una directory");
+		return NULL;
+	}
 	
 	FileHandle* file_handle = malloc(sizeof(FileHandle));
 	file_handle->sfs = d->sfs;
-	file_handle->fcb = newfile;
+	file_handle->fcb = file_to_create;
 	file_handle->directory = fdb;
-	file_handle->current_block = file_block;
+	file_handle->current_block = NULL;							//A. prima ci assegnavo un FileBlock, da rivedere anche qua
 	file_handle->pos_in_file = 0;
 	
 	return file_handle;
@@ -1341,6 +1348,86 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 		}
 	}
 	return 0;
+}
+
+int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, int new_block){
+
+	DirectoryBlock db_temp;
+	int i, res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int block_free = 0;
+	int block_pos = 0;
+	int elemToCreate_posInDisk = 0;								//A. Forse si dovrebbe aggiornarlo dopo assegnandolo a file_to_create->fcb.block_in_disk
+	
+	//A. Controlliamo se ci sta spazio nei blocchi directory
+	for(i=0; i<dim; i++){
+		if(db->file_blocks[i] == 0){  
+			block_free = 1;
+			block_pos = i;
+			break;
+		}
+	}
+	
+	//A. Ci sono altri blocchi da controllare e non abbiamo trovato ancora un blocco libero
+	if(fdb->num_entries > i && block_free == 0){
+		DirectoryBlock* next_block = get_next_block_directory(db,disk);
+			
+			while(next_block != NULL && block_free == 0){
+				pos_in_disk = get_position_disk_directory_block(next_block,disk);
+				
+				res = DiskDriver_readBlock(disk, &db_temp, pos_in_disk,sizeof(DirectoryBlock));
+				if(res == -1){
+					fprintf(stderr, "SimpleFS_createFile: lettura del blocco next_block fallita\n");
+					DiskDriver_freeBlock(disk, fdb->fcb.block_in_disk);
+					return -1;
+				}
+				
+				
+				elemToCreate_posInDisk = pos_in_disk;
+				for(i=0; i<dim; i++){
+					if(next_block->file_blocks[i] == 0){
+						block_free = 1;
+						block_pos = i;
+						break;
+					}
+				}
+				next_block = get_next_block_directory(next_block,disk);
+			}
+	}
+	
+	//A. Non c'era spazio nei precedenti blocchi directory. Devo usarne uno nuovo. Mi procuro un blocco libero e ci scrivo sopra il DirectoryBlock
+	if(block_free == 0){
+		DirectoryBlock db_to_create = {0};
+		db_to_create.position = -1;								//A. da rivedere, credo vada cambiato
+		db_to_create.file_blocks[0] = new_block;
+
+		int db_to_create_posInDisk = DiskDriver_freeBlock(disk, disk->header->first_free_block); 
+		if(db_to_create_posInDisk == -1){
+			fprintf(stderr, "Errore in SimpleFS_CreateFile: impossibile assegnare blocco libero alla db \n");
+			DiskDriver_freeBlock(disk,fdb->fcb.block_in_disk);
+			return -1;
+		}
+		
+		res = DiskDriver_writeBlock(disk, &db_to_create, db_to_create_posInDisk, sizeof(DirectoryBlock)); 
+		if(res == -1){
+			fprintf(stderr, "Errore in SimpleFS_createFile: impossibile scrivere il nuovo blocco da assegnare alla db\n");
+			DiskDriver_freeBlock(disk,fdb->fcb.block_in_disk);
+			return -1;
+		}
+										
+		db_temp.index_block = db_to_create_posInDisk;					//A. da rivedere
+		db_temp = db_to_create;		
+		elemToCreate_posInDisk = db_to_create_posInDisk;
+	}
+	
+	//Aggiorno 
+	fdb->num_entries++;
+	DiskDriver_freeBlock(disk, fdb->fcb.block_in_disk);
+	DiskDriver_writeBlock(disk, fdb,fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock));
+	db_temp.file_blocks[block_pos] = new_block;
+	DiskDriver_freeBlock(disk, elemToCreate_posInDisk);
+	DiskDriver_writeBlock(disk, &db_temp, elemToCreate_posInDisk, sizeof(DirectoryBlock));
+	
+	return 0;	
 }
 
 void print_index_block(BlockIndex* index){
