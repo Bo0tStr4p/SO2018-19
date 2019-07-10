@@ -5,38 +5,66 @@
 
 int main(int agc, char** argv) { 						
 	
-	const char* filename = "./disk_driver_fs_test.txt";
+	const char* filename = "./simple_fs_test.txt";
 	
-	SimpleFS* simple_fs_1 = (SimpleFS*)malloc(sizeof(SimpleFS));
-	
-	DiskDriver* disk_1 = (DiskDriver*)malloc(sizeof(DiskDriver));
-	if(disk_1 == NULL){
-		printf("Errore nella malloc di disk_1\n");
+	SimpleFS* simple_fs = (SimpleFS*)malloc(sizeof(SimpleFS));
+	if(simple_fs == NULL){
+		fprintf(stderr,"Error: malloc on simple_fs.\n");
 		return -1;
 	}
 	
-	
-	printf("Inizializzazione di disk_1\n");
-	DiskDriver_init(disk_1,filename,64); 
-	printf("Ok, disk_1 inizializzato\n");
-	
-	
-	DirectoryHandle* directory_handle_1 = SimpleFS_init(simple_fs_1,disk_1);
-	if(directory_handle_1 == NULL){
-		printf("\nsimple_fs_1 non inizializzato. Formatto simple_fs_1\n");
-		DiskDriver_init(disk_1,filename, 64);
-		SimpleFS_format(simple_fs_1);
-		directory_handle_1 = SimpleFS_init(simple_fs_1,disk_1);
+	DiskDriver* disk = (DiskDriver*)malloc(sizeof(DiskDriver));
+	if(disk == NULL){
+		fprintf(stderr,"Error: malloc on disk.\n");
+		return -1;
 	}
 	
+	printf("Initialization of disk driver with 200 blocks");
+	DiskDriver_init(disk,filename,200); 
+	DiskDriver_flush(disk);
+	DiskDriver_print_information(disk,filename);
 	
-	//A. print di prova, poi andranno tolte e/o sistemate
-	printf("directory_handle->pos_in_dir:%i\n",directory_handle_1->pos_in_dir);
+	DirectoryHandle* current_dir = SimpleFS_init(simple_fs,disk);
+	if(current_dir == NULL){
+		printf("\nsimple_fs_1 non inizializzato. Formatto simple_fs\n");
+		SimpleFS_format(simple_fs);
+		current_dir = SimpleFS_init(simple_fs,disk);
+	}
+	else{
+		printf("FileSystem inizializzato precedentemente, recupero strutture.\n");
+	}
 	
-	printf("\n");
-	printf("FirstBlock size %ld\n", sizeof(FirstFileBlock));
-	printf("DataBlock size %ld\n", sizeof(FileBlock));
-	printf("FirstDirectoryBlock size %ld\n", sizeof(FirstDirectoryBlock));
-	printf("DirectoryBlock size %ld\n", sizeof(DirectoryBlock));
-  
+	printf("Current directory: %s\n", current_dir->dcb->fcb.name);
+	
+	printf("\nCreo primo file nella directory / \n");
+	
+	if(SimpleFS_createFile(current_dir,"casa.txt")){
+		fprintf(stderr,"Error: Could not create file casa.txt");
+		return -1;
+	}
+	
+	if(SimpleFS_createFile(current_dir,"mare.txt")){
+		fprintf(stderr,"Error: Could not create file casa.txt");
+		return -1;
+	}
+	
+	if(SimpleFS_createFile(current_dir,"luna.txt")){
+		fprintf(stderr,"Error: Could not create file casa.txt");
+		return -1;
+	}
+	
+	if(SimpleFS_createFile(current_dir,"sole.txt")){
+		fprintf(stderr,"Error: Could not create file casa.txt");
+		return -1;
+	}
+	
+	if(SimpleFS_createFile(current_dir,"casa.txt")){
+		fprintf(stderr,"Error: Could not create file casa.txt");
+		return -1;
+	}
+	
+	free(simple_fs);
+	free(disk);
+	free(current_dir->dcb);
+	free(current_dir);
 }
