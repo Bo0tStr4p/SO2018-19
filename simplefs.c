@@ -18,7 +18,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 		return NULL;
 	}	
 		
-	int res = DiskDriver_readBlock(disk,&first_directory_block,0, sizeof(FirstDirectoryBlock));
+	int res = DiskDriver_readBlock(disk,first_directory_block,0, sizeof(FirstDirectoryBlock));
 	if(res == -1){ 										//A. controllo che il blocco sia disponibile. Se non è disponibile, non possiamo andare avanti
 		free(first_directory_block);
 		return NULL;
