@@ -33,8 +33,8 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 	directory_handle->sfs = fs;
 	directory_handle->dcb = first_directory_block;
 	directory_handle->parent_dir = NULL;
-	directory_handle->current_block = NULL;
-	directory_handle->pos_in_dir = 0;
+	//directory_handle->current_block = NULL;
+	//directory_handle->pos_in_dir = 0;
 	directory_handle->pos_in_block = 0;
 	
 	return directory_handle;
@@ -74,10 +74,29 @@ void SimpleFS_format(SimpleFS* fs){
 	int bitmap_size = fs->disk->header->bitmap_entries; 			//A. numero di blocchi della bitmap
 	memset(fs->disk->bitmap_data,'\0', bitmap_size); 				//A. mappo con 0 (blocco libero) l'array bitmap_data
 	
+	DirectoryBlock dir_block = {
+		.index_block = 0, 
+		.position = 0
+	};
+	
+	int free_block = DiskDriver_getFreeBlock(fs->disk, 1);
+	if(free_block == -1){
+		fprintf(stderr, "Error: getFreeBlock\n");
+		return;
+	}
+	
+	root_directory.index.blocks[0] = free_block;
+	
+	if(DiskDriver_writeBlock(fs->disk, &dir_block, free_block, sizeof(DirectoryBlock)) == -1){
+		fprintf(stderr,"Error in SimpleFS_format: get free block.\n");
+		return;
+	}
+	
 	int ret = DiskDriver_writeBlock(fs->disk, &root_directory, 0, sizeof(FirstDirectoryBlock));		//A. vado a scrivere sul disco la root directory
 	if (ret == -1){
 		fprintf(stderr, "Errore in SimpleFS_format: impossibile formattare\n");
 		//free(root_directory);
+		return;
 	}
 	return;
 }
@@ -95,15 +114,15 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	SimpleFS* fs = d->sfs;
 	DiskDriver* disk = fs->disk;                   
 	FirstDirectoryBlock* fdb = d->dcb;
-	DirectoryBlock* db = d->current_block;
-	if(fs == NULL || disk == NULL || fdb == NULL || db == NULL){ 
+	//DirectoryBlock* db = d->current_block; //R. Non serve
+	if(fs == NULL || disk == NULL || fdb == NULL){ 
 		fprintf(stderr,"Errore in SimpleFS_createFile: la DirectoryHandle non è allocata bene\n");
 		return NULL;
 	}
 	
 	//A. Controllo.
-	int ret;
-	ret = SimpleFS_already_exists(disk,fdb,db,(char*)filename);
+	int ret,i;
+	ret = SimpleFS_already_exists_file(disk,fdb,(char*)filename);
 	if(ret == -1){
 		fprintf(stderr, "Errore in SimpleFS_createFile: l'elemento già esiste opppure la SImpleFS_already_exists restituisce errore");
 		return NULL;
@@ -117,17 +136,42 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	}
 	
 	//A. creiamo il primo blocco del file
-	FirstFileBlock* file_to_create = malloc(sizeof(FirstFileBlock));   
+	FirstFileBlock* file_to_create = malloc(sizeof(FirstFileBlock));  
+	if(file_to_create == -1){
+		fprintf(stderr,"Error: malloc on file_to_create.\n");
+		return -1;
+	} 
 	file_to_create->index.previous = -1;
 	file_to_create->index.next = -1;
+
+	for(i=0; i<MAX_BLOCKS; i++){
+		file_to_create->index.blocks[i] = -1;				//R. Tutti i blocchi vuoti settati a -1
+	}
 	
 	file_to_create->fcb.directory_block = fdb->fcb.block_in_disk;
 	file_to_create->fcb.block_in_disk = new_block; 					//A. gli assegno il blocco libero sul disco ottenuto dalla getFreeBlock
 	strcpy(file_to_create->fcb.name,filename);
 	file_to_create->fcb.written_bytes = 0;
-	file_to_create->fcb.size_in_bytes = 0;
-	file_to_create->fcb.size_in_blocks = 0;
+	//file_to_create->fcb.size_in_bytes = BLOCK_SIZE;
+	//file_to_create->fcb.size_in_blocks = 1;
 	file_to_create->fcb.is_dir = 0;
+	
+	int free_block = DiskDriver_getFreeBlock(disk,new_block + 1);
+	if(free_block == -1){
+		fprintf(stderr,"Error: get freeblock.\n");
+		return -1;
+	}
+	
+	file_to_create->index.block[0] = free_block;
+	
+	FileBlock* file = (FileBlock*)malloc(sizeof(FileBlock));
+	if(file == NULL){
+		fprintf(stderr,"Error: malloc on file.\n");
+		return -1;
+	}
+	
+	file_block->index_block = new_block;
+	file_block->position = 0;
 	
 	//A. aggiorniamo lo spazio nella directory
 	//fdb->file_blocks[fdb->num_entries] = new_block;			//A. eliminato a seguito del cambiamento fatti nelle struct
@@ -140,11 +184,11 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 		return NULL;
 	}
 	
-	//A. Non sono sicuro vada inizializzato
-	//FileBlock* file_block = malloc(sizeof(FileBlock));
-	//file_block->index_block = 0;
-	//file_block->position = 0;
-	//file_block->data = NULL;
+	ret = DiskDriver_writeBlock(disk, file , free_block, sizeof(FirstFileBlock));
+	if(ret == -1){
+		fprintf(stderr, "Errore in SimpleFS_createFile: impossibile scrivere sul disco");
+		return NULL;
+	}
 	
 	//A. Dobbiamo mettere il file in un blocco directory.
 	ret = SimpleFS_assignDirectory(disk,fdb,db,new_block);
@@ -157,7 +201,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	file_handle->sfs = d->sfs;
 	file_handle->fcb = file_to_create;
 	file_handle->directory = fdb;
-	file_handle->current_block = NULL;							//A. prima ci assegnavo un FileBlock, da rivedere anche qua
+	//file_handle->current_block = NULL;							//A. prima ci assegnavo un FileBlock, da rivedere anche qua
 	file_handle->pos_in_file = 0;
 	
 	return file_handle;
@@ -680,6 +724,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 // creates a new directory in the current one (stored in fs->current_directory_block)
 // 0 on success
 // -1 on error
+//R. DA RIVEDERE, CAMBIATO QUALCOSA
 int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 	if(d == NULL || dirname == NULL){
 		fprintf(stderr,"Errore in SimpleFS_mkDir: parametri inseriti non corretti\n");
@@ -690,10 +735,10 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 	
 	DiskDriver* disk = d->sfs->disk;
 	FirstDirectoryBlock* fdb = d->dcb;
-	DirectoryBlock* db = d->current_block;
+	//DirectoryBlock* db = d->current_block;
 	
 	//A. Controlliamo prima che la directory che sto creando non esista già
-	res = SimpleFS_already_exists(disk,fdb,db,dirname);
+	res = SimpleFS_already_exists(disk,fdb,dirname);
 	if(res == -1){
 		fprintf(stderr, "Errore in SimpleFS_mkDir: l'elemento già esiste opppure la SImpleFS_already_exists restituisce errore");
 		return -1;
@@ -739,6 +784,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 // removes the file in the current directory
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
+//R. DA RIVEDERE PERCHE' CAMBIATO QUALCOSA
 int SimpleFS_remove(DirectoryHandle* d, char* filename){	
 	if(d == NULL || filename == NULL){
 		fprintf(stderr,"Errore in SimpleFS_remove: parametri inseriti non corretti\n");
@@ -750,7 +796,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 	
 	DiskDriver* disk = d->sfs->disk;
 	FirstDirectoryBlock* fdb = d->dcb;
-	DirectoryBlock* db = d->current_block;
+	//DirectoryBlock* db = d->current_block;
 	
 	//A. Controllo se la directory è vuota. Se lo è inutile continuare, non c'è nulla da rimuovere
 	if(fdb->num_entries < 1){
@@ -759,7 +805,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 	}
 	
 	//A. La directory non è vuota. Cerco il file nei blocchi directory
-	pos = SimpleFS_already_exists(disk,fdb,db,filename);
+	pos = SimpleFS_already_exists(disk,fdb,filename);
 	if(pos == -1){
 		fprintf(stderr, "Errore in SimpleFS_remove: l'elemento che si sta cercando non è in questa directory");
 		return -1;
@@ -1148,6 +1194,7 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 //A. Funzione per creare un nuovo directory block collegandolo con il blocco index di riferimento.
 int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk){
 	int current_position_in_index = current_block -> position;
+	int i;
 	
 	//A. Caso in cui devo creare un nuovo blocco index e collegarlo
 	if(current_position_in_index + 1 == MAX_BLOCKS){	
@@ -1198,6 +1245,8 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		//A. Si Inizializza il nuovo blocco
 		new->index_block = new_index_block;
 		new->position = 0;
+		for(i=0;i<((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int));i++)
+			new->file_blocks[i] = 0;
 		
 		free(index); 
 		
@@ -1219,7 +1268,9 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 		
 		//A. Inizializzo il nuovo blocco
 		new->index_block = index_block;
-		new->position = current_position_in_index + 1; 
+		new->position = current_position_in_index + 1;
+		for(i=0;i<((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int));i++)
+			new->file_blocks[i] = 0; 
 		
 		//A. Ottengo il nuovo blocco libero
 		int block_return = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
@@ -1266,9 +1317,21 @@ int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDrive
 
 // Funzione per cercare se l'elemento (file/directory) con nome elem_name è gia presente sul disco.
 // Restituisce la posizione dell'elemento nel blocco directory in caso trovi l'elemento (file/directory) sul disco, -1 in caso non la trovi o di errore. 
-int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, DirectoryBlock* db, char* elem_name){
-	if(disk == NULL || fdb == NULL || db == NULL || elem_name == NULL){
+int SimpleFS_already_exists_file(DiskDriver* disk, FirstDirectoryBlock* fdb, char* elem_name){
+	if(disk == NULL || fdb == NULL || elem_name == NULL){
 		fprintf(stderr, "Errore in SImpleFS_already_exists: parametri inseriti non corretti\n");
+		return -1;
+	}
+	
+	//R. Estraggo il primo DirectoryBlock
+	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(db == NULL){
+		fprintf(stderr,"Error: malloc on db in SimpleFS_already_exists");
+		return -1;
+	}
+	if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
+		fprintf(stderr,"Error: could not read directory block one.\n");
+		free(db);
 		return -1;
 	}
 	
@@ -1283,6 +1346,7 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 				if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){ 						
 					//esiste già un elemento con lo stesso nome presente sul disco
 					elem_pos = db->file_blocks[i];
+					free(db);
 					return elem_pos;
 				}
 			}
@@ -1290,30 +1354,33 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, Director
 
 		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
 		if(fdb->num_entries > i){
-			DirectoryBlock* next_block = get_next_block_directory(db,disk);
+			db = get_next_block_directory(db,disk);
 			
-			while(next_block != NULL){
-				pos_in_disk = get_position_disk_directory_block(next_block,disk);
+			while(db != NULL){
+				pos_in_disk = get_position_disk_directory_block(db,disk);
 				
 				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
 				if(res == -1){
 					fprintf(stderr, "Errore in SimpleFS_already_exists: DiskDriver_readBlock non legge\n");
+					free(db);
 					return -1;
 				}
 				
 				for(i=0; i<dim; i++){
-					if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
+					if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i], sizeof(FirstFileBlock)) != -1){
 						if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){
 							//esiste già un elemento con lo stesso nome presente sul disco
 							elem_pos = db->file_blocks[i];
+							free(db);
 							return elem_pos;
 						}
 					}
 				}
-				next_block = get_next_block_directory(next_block,disk);
+				db = get_next_block_directory(db,disk);
 			}
 		}
 	}
+	free(db);
 	return -1;
 }
 
@@ -1322,7 +1389,6 @@ int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, Directo
 		fprintf(stderr, "Errore in SimpleFS_assignDirectory: parametri inseriti non corretti");
 		return -1;
 	}
-	
 	
 	DirectoryBlock db_temp;
 	int i, res, pos_in_disk, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
