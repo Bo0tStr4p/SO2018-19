@@ -40,13 +40,13 @@ int main(int agc, char** argv) {
 	
 	FileHandle* file1 = SimpleFS_createFile(current_dir,"casa.txt");
 	if(file1 == NULL){
-		fprintf(stderr,"Error: Could not create file casa.txt");
+		fprintf(stderr,"Error: Could not create file casa.txt\n");
 		return -1;
 	}
 	
 	FileHandle* file2 = SimpleFS_createFile(current_dir,"mare.txt");
 	if(file2 == NULL){
-		fprintf(stderr,"Error: Could not create file mare.txt");
+		fprintf(stderr,"Error: Could not create file mare.txt\n");
 		return -1;
 	}
 	
@@ -64,7 +64,7 @@ int main(int agc, char** argv) {
 	
 	FileHandle* file5 = SimpleFS_createFile(current_dir,"casa.txt");
 	if(file5 == NULL){
-		fprintf(stderr,"Error: Could not create file casa.txt");
+		fprintf(stderr,"Error: Could not create file casa.txt\n");
 		return -1;
 	}
 	
