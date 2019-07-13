@@ -775,13 +775,15 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 	dir_to_create->fcb.is_dir = 1;
 	
 	
+	
 	res = DiskDriver_writeBlock(disk,dir_to_create,new_block,sizeof(FirstDirectoryBlock)); 
 	if(res == -1){
 		fprintf(stderr,"Errore in SimpleFS_mkDir: scrittura del blocco fallita da DiskDriver_writeBlock\n");
 		return -1;
 	}
 	
-	res = SimpleFS_assignDirectory(disk,fdb,db,new_block);
+	
+	res = SimpleFS_assignDirectory(disk,fdb,new_block,0);
 	if(res == -1){
 		fprintf(stderr, "Errore in SimpleFS_mkDir: impossibile assegnare spazio della nuova directory in una directory");
 		return -1;
@@ -1394,7 +1396,70 @@ int SimpleFS_already_exists_file(DiskDriver* disk, FirstDirectoryBlock* fdb, cha
 }
 
 int SimpleFS_already_exists_directory(DiskDriver* disk, FirstDirectoryBlock* fdb, char* elem_name){
-	return 0;
+	if(disk == NULL || fdb == NULL || elem_name == NULL){
+		fprintf(stderr, "Errore in SImpleFS_already_exists: parametri inseriti non corretti\n");
+		return -1;
+	}
+	
+	//R. Estraggo il primo DirectoryBlock
+	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(db == NULL){
+		fprintf(stderr,"Error: malloc on db in SimpleFS_already_exists");
+		return -1;
+	}
+	if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
+		fprintf(stderr,"Error: could not read directory block one.\n");
+		free(db);
+		return -1;
+	}
+	
+	FirstDirectoryBlock fdb_to_check;
+	int i,res, pos_in_disk, elem_pos, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+
+	
+	//A. Controlliamo prima che la directory che sto creando non esista già
+	if(fdb->num_entries > 0){	
+		for(i=0; i<dim; i++){
+			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&fdb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
+				if(strcmp(fdb_to_check.fcb.name,elem_name) == 0){ 						
+					//esiste già un elemento con lo stesso nome presente sul disco
+					elem_pos = db->file_blocks[i];
+					free(db);
+					return elem_pos;
+				}
+			}
+		}
+
+		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
+		if(fdb->num_entries > i){
+			db = get_next_block_directory(db,disk);
+			
+			while(db != NULL){
+				pos_in_disk = get_position_disk_directory_block(db,disk);
+				
+				res = DiskDriver_readBlock(disk, &fdb_to_check, pos_in_disk, sizeof(FirstFileBlock));
+				if(res == -1){
+					fprintf(stderr, "Errore in SimpleFS_already_exists: DiskDriver_readBlock non legge\n");
+					free(db);
+					return -1;
+				}
+				
+				for(i=0; i<dim; i++){
+					if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&fdb_to_check,db->file_blocks[i], sizeof(FirstFileBlock)) != -1){
+						if(strcmp(fdb_to_check.fcb.name,elem_name) == 0){
+							//esiste già un elemento con lo stesso nome presente sul disco
+							elem_pos = db->file_blocks[i];
+							free(db);
+							return elem_pos;
+						}
+					}
+				}
+				db = get_next_block_directory(db,disk);
+			}
+		}
+	}
+	free(db);
+	return -1;
 }
 
 int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, int pos_ffb, int pos_fb){
