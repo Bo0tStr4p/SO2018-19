@@ -38,27 +38,32 @@ int main(int agc, char** argv) {
 	
 	printf("\nCreo primo file nella directory / \n");
 	
-	if(SimpleFS_createFile(current_dir,"casa.txt")){
+	FileHandle* file1 = SimpleFS_createFile(current_dir,"casa.txt");
+	if(file1 == NULL){
 		fprintf(stderr,"Error: Could not create file casa.txt");
 		return -1;
 	}
 	
-	if(SimpleFS_createFile(current_dir,"mare.txt")){
-		fprintf(stderr,"Error: Could not create file casa.txt");
+	FileHandle* file2 = SimpleFS_createFile(current_dir,"mare.txt");
+	if(file2 == NULL){
+		fprintf(stderr,"Error: Could not create file mare.txt");
 		return -1;
 	}
 	
-	if(SimpleFS_createFile(current_dir,"luna.txt")){
-		fprintf(stderr,"Error: Could not create file casa.txt");
+	FileHandle* file3 = SimpleFS_createFile(current_dir,"luna.txt");
+	if(file3 == NULL){
+		fprintf(stderr,"Error: Could not create file luna.txt");
 		return -1;
 	}
 	
-	if(SimpleFS_createFile(current_dir,"sole.txt")){
-		fprintf(stderr,"Error: Could not create file casa.txt");
+	FileHandle* file4 = SimpleFS_createFile(current_dir,"sole.txt");
+	if(file4 == NULL){
+		fprintf(stderr,"Error: Could not create file sole.txt");
 		return -1;
 	}
 	
-	if(SimpleFS_createFile(current_dir,"casa.txt")){
+	FileHandle* file5 = SimpleFS_createFile(current_dir,"casa.txt");
+	if(file5 == NULL){
 		fprintf(stderr,"Error: Could not create file casa.txt");
 		return -1;
 	}

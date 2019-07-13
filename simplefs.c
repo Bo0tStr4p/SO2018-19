@@ -47,7 +47,7 @@ DirectoryHandle* SimpleFS_init(SimpleFS* fs, DiskDriver* disk){
 // and set to the top level directory
 void SimpleFS_format(SimpleFS* fs){
 	if(fs == NULL){
-		fprintf(stderr, "Error in SImpleFS_format: could not format, bad parameters.\n");
+		fprintf(stderr, "Error in SimpleFS_format: could not format, bad parameters.\n");
 		return;
 	}
 	
@@ -84,7 +84,7 @@ void SimpleFS_format(SimpleFS* fs){
 	
 	int free_block = DiskDriver_getFreeBlock(fs->disk, 1);
 	if(free_block == -1){
-		fprintf(stderr, "Error: getFreeBlock\n");
+		fprintf(stderr, "Error in SimpleFS_format: getFreeBlock\n");
 		return;
 	}
 	
@@ -127,9 +127,15 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	int ret,i;
 	ret = SimpleFS_already_exists_file(disk,fdb,(char*)filename);
 	if(ret == -1){
-		fprintf(stderr, "Errore in SimpleFS_createFile: l'elemento già esiste opppure la SImpleFS_already_exists restituisce errore");
+		fprintf(stderr, "Errore in SimpleFS_createFile: SimpleFS_already_exists_file restituisce errore\n");
 		return NULL;
 	}
+	if(ret != -2){
+		fprintf(stderr, "Errore in SimpleFS_createFile: il file che stai creando già presente sul disco\n");
+		return NULL;
+	}
+	
+	printf("ret:%d\n",ret); 
 	
 	//A. Il file non esiste, possiamo crearlo da 0. Prendiamo dal disco il primo blocco libero
 	int new_block = DiskDriver_getFreeBlock(disk,disk->header->first_free_block);
@@ -1327,7 +1333,7 @@ int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDrive
 }
 
 // Funzione per cercare se un file con nome elem_name è gia presente sul disco.
-// Restituisce la posizione dell'elemento nel blocco directory in caso trovi il file sul disco, -1 in caso non la trovi o di errore. 
+// Restituisce la posizione dell'elemento nel blocco directory in caso trovi il file sul disco, -1 in caso di errore, -2 in caso non lo trovi. 
 int SimpleFS_already_exists_file(DiskDriver* disk, FirstDirectoryBlock* fdb, char* elem_name){
 	if(disk == NULL || fdb == NULL || elem_name == NULL){
 		fprintf(stderr, "Errore in SImpleFS_already_exists_file: parametri inseriti non corretti\n");
@@ -1392,7 +1398,7 @@ int SimpleFS_already_exists_file(DiskDriver* disk, FirstDirectoryBlock* fdb, cha
 		}
 	}
 	free(db);
-	return -1;
+	return -2;
 }
 
 // Funzione per cercare se una directory con nome elem_name è gia presente sul disco.
