@@ -1326,22 +1326,22 @@ int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDrive
 	return index.blocks[directory_block->position];
 }
 
-// Funzione per cercare se l'elemento (file/directory) con nome elem_name è gia presente sul disco.
-// Restituisce la posizione dell'elemento nel blocco directory in caso trovi l'elemento (file/directory) sul disco, -1 in caso non la trovi o di errore. 
+// Funzione per cercare se un file con nome elem_name è gia presente sul disco.
+// Restituisce la posizione dell'elemento nel blocco directory in caso trovi il file sul disco, -1 in caso non la trovi o di errore. 
 int SimpleFS_already_exists_file(DiskDriver* disk, FirstDirectoryBlock* fdb, char* elem_name){
 	if(disk == NULL || fdb == NULL || elem_name == NULL){
-		fprintf(stderr, "Errore in SImpleFS_already_exists: parametri inseriti non corretti\n");
+		fprintf(stderr, "Errore in SImpleFS_already_exists_file: parametri inseriti non corretti\n");
 		return -1;
 	}
 	
 	//R. Estraggo il primo DirectoryBlock
 	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 	if(db == NULL){
-		fprintf(stderr,"Error: malloc on db in SimpleFS_already_exists");
+		fprintf(stderr,"Error in SimpleFS_already_exists_file: malloc on db in SimpleFS_already_exists");
 		return -1;
 	}
 	if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
-		fprintf(stderr,"Error: could not read directory block one.\n");
+		fprintf(stderr,"Error in SimpleFS_already_exists_file: could not read directory block one.\n");
 		free(db);
 		return -1;
 	}
@@ -1372,7 +1372,7 @@ int SimpleFS_already_exists_file(DiskDriver* disk, FirstDirectoryBlock* fdb, cha
 				
 				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
 				if(res == -1){
-					fprintf(stderr, "Errore in SimpleFS_already_exists: DiskDriver_readBlock non legge\n");
+					fprintf(stderr, "Errore in SimpleFS_already_exists_file: DiskDriver_readBlock non legge\n");
 					free(db);
 					return -1;
 				}
@@ -1395,20 +1395,22 @@ int SimpleFS_already_exists_file(DiskDriver* disk, FirstDirectoryBlock* fdb, cha
 	return -1;
 }
 
+// Funzione per cercare se una directory con nome elem_name è gia presente sul disco.
+// Restituisce la posizione dell'elemento nel blocco directory in caso trovi la directory sul disco, -1 in caso non la trovi o di errore. 
 int SimpleFS_already_exists_directory(DiskDriver* disk, FirstDirectoryBlock* fdb, char* elem_name){
 	if(disk == NULL || fdb == NULL || elem_name == NULL){
-		fprintf(stderr, "Errore in SImpleFS_already_exists: parametri inseriti non corretti\n");
+		fprintf(stderr, "Errore in SimpleFS_already_exists_directory: parametri inseriti non corretti\n");
 		return -1;
 	}
 	
-	//R. Estraggo il primo DirectoryBlock
+	//A. Estraggo il primo DirectoryBlock
 	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 	if(db == NULL){
-		fprintf(stderr,"Error: malloc on db in SimpleFS_already_exists");
+		fprintf(stderr,"Error in SimpleFS_already_exists_directory: malloc on db in SimpleFS_already_exists");
 		return -1;
 	}
 	if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
-		fprintf(stderr,"Error: could not read directory block one.\n");
+		fprintf(stderr,"Error in SimpleFS_already_exists_directory: could not read directory block one.\n");
 		free(db);
 		return -1;
 	}
@@ -1439,7 +1441,7 @@ int SimpleFS_already_exists_directory(DiskDriver* disk, FirstDirectoryBlock* fdb
 				
 				res = DiskDriver_readBlock(disk, &fdb_to_check, pos_in_disk, sizeof(FirstFileBlock));
 				if(res == -1){
-					fprintf(stderr, "Errore in SimpleFS_already_exists: DiskDriver_readBlock non legge\n");
+					fprintf(stderr, "Errore in SimpleFS_already_exists_directory: DiskDriver_readBlock non legge\n");
 					free(db);
 					return -1;
 				}
