@@ -114,7 +114,7 @@ void DiskDriver_init(DiskDriver* disk, const char* filename, int num_blocks){
 // 0 otherwise
 int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num, int bytes_to_read){
     if(block_num >= disk->header->bitmap_blocks || block_num < 0 || dest == NULL || disk == NULL ){
-		fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
+		//fprintf(stderr,"Error: could not start with read block. Bad parameters \n");
         return -1;
 	}
 	
