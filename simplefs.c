@@ -224,15 +224,15 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 }
 
 // reads in the (preallocated) blocks array, the name of all files in a directory 
-int SimpleFS_readDir(char** names, DirectoryHandle* d){
-	if(names == NULL || d == NULL){
+int SimpleFS_readDir(char** names,int* flag, DirectoryHandle* d){
+	if(names == NULL || flag == NULL || d == NULL){
 		fprintf(stderr, "Errore in SimpleFS_readDir: parametri inseriti non corretti\n");
 		return -1;
 	}
 	
 	DiskDriver* disk = d->sfs->disk;
 	FirstDirectoryBlock *fdb = d->dcb;
-	DirectoryBlock* db = d->current_block;
+	//DirectoryBlock* db = d->current_block; //R. Non serve
 	
 	//A. Se la directory è vuota, inutile procedere
 	if(fdb->num_entries <= 0){
@@ -243,10 +243,24 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 	int i, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int), dim_names=0;
 	FirstFileBlock ffb_to_check; 
 	
+	//R. Estraggo il primo DirectoryBlock
+	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(db == NULL){
+		fprintf(stderr,"Error in SimpleFS_already_exists_file: malloc on db in SimpleFS_already_exists");
+		return -1;
+	}
+	
+	if(DiskDriver_readBlock(disk,db,d->dcb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
+		fprintf(stderr,"Error in SimpleFS_already_exists_file: could not read directory block one.\n");
+		free(db);
+		return -1;
+	}
+	
 	//A. Iniziamo a leggere i file contenuti nel blocco directory in cui ci troviamo, cioè d->current_block
 	for (i=0; i<dim; i++){	
 		if (db->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &ffb_to_check, db->file_blocks[i], sizeof(FirstFileBlock)) != -1){ 
-			names[dim_names] = strndup(ffb_to_check.fcb.name, 128); 											//A. Salvo il nome del file che sto leggendo nell'array names
+			names[dim_names] = strndup(ffb_to_check.fcb.name, 128); 	//A. Salvo il nome del file che sto leggendo nell'array names
+			flag[i] = ffb_to_check.fcb.is_dir;							//R. Salvo se è file o directory
             dim_names++;
 		}
 	}
@@ -254,28 +268,21 @@ int SimpleFS_readDir(char** names, DirectoryHandle* d){
 	//A. Caso in cui ci sono file non contenuti nello stesso blocco directory e quindi bisogna cambiare blocco
 	if (fdb->num_entries > i){	
 		
-		int res, pos_in_disk;
-		DirectoryBlock* next_block = get_next_block_directory(db,disk);
+		db = get_next_block_directory(db,disk);
 
-		while (next_block != NULL){	 
-			pos_in_disk = get_position_disk_directory_block(next_block,disk);
-			
-			res = DiskDriver_readBlock(disk, next_block, pos_in_disk, sizeof(DirectoryBlock)); 
-			if (res == -1){
-				fprintf(stderr, "Errore in SimpleFS_readDir: errore in DiskDriver_readBlock\n");
-				return -1;
-			}
+		while (db != NULL){	 
 
 			for (i=0; i<dim; i++){	 
-				if (next_block->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &ffb_to_check, next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){ 
+				if (db->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &ffb_to_check, db->file_blocks[i], sizeof(FirstFileBlock)) != -1){ 
 					names[dim_names] = strndup(ffb_to_check.fcb.name, 128); 											//A. Salvo il nome del file che sto leggendo nell'array names
+					flag[i] = ffb_to_check.fcb.is_dir;							//R. Salvo se è file o directory
                     dim_names++;
 				}
 			}
-			next_block = get_next_block_directory(next_block,disk);
+			db = get_next_block_directory(db,disk);
 		}
 	}
-	
+	free(db);
 	return 0;
 }
 
@@ -377,6 +384,14 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 int SimpleFS_close_file(FileHandle* f){
 	free(f->fcb);
 	//free(f->current_block);
+	free(f);
+	return 0;
+}
+
+int SimpleFS_close_directory(DirectoryHandle* f){
+	free(f->dcb);
+	if(f->parent_dir != NULL)
+		free(f->parent_dir);
 	free(f);
 	return 0;
 }
