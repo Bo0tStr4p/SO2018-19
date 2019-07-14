@@ -131,7 +131,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 		return NULL;
 	}
 	if(ret != -2){
-		fprintf(stderr, "Errore in SimpleFS_createFile: il file che stai creando é già presente sul disco\n");
+		//fprintf(stderr, "Errore in SimpleFS_createFile: il file che stai creando é già presente sul disco\n");
 		return NULL;
 	} 
 	
