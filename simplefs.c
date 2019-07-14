@@ -320,8 +320,6 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 			free(file_handle);
 			return NULL;
 		}
-
-		//R. Fino a qui
 		
 		//R. Verifico l'esistenza del file nei Directory Block
 		
@@ -364,7 +362,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 			free(dir_block);
 			return file_handle;
 		} else {
-			fprintf(stderr,"Error, could not open file: file doesn't exist.\n");
+			//fprintf(stderr,"Error, could not open file: file doesn't exist.\n");
 			free(file_handle);
 			free(to_check);
 			free(dir_block);
@@ -1023,7 +1021,7 @@ BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* dis
 FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	BlockIndex* index = get_block_index_file(file,disk); //R. Estraggo il blocco index
 	if(index == NULL){
-		fprintf(stderr,"Error in get next block file\n");
+		//fprintf(stderr,"Error in get next block file\n");
 		return NULL;
 	}
 	
@@ -1032,21 +1030,23 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	//R. Caso in cui devo andare nel blocco index successivo
 	if((current_position + 1) == MAX_BLOCKS){
 		if(index->next == -1){
-			fprintf(stderr,"Error in get next block file\n");
+			//fprintf(stderr,"Error in get next block file\n");
 			free(index);
 			return NULL;
 		}
 		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
 		if(DiskDriver_readBlock(disk, next, index->next, sizeof(BlockIndex)) == -1){
-			fprintf(stderr,"Errore nella get next block file\n");
+			//fprintf(stderr,"Errore nella get next block file\n");
 			free(index);
+			free(next);
 			return NULL;
 		}
 		FileBlock* next_file = (FileBlock*)malloc(sizeof(FileBlock));
 		if(DiskDriver_readBlock(disk, next_file, next->blocks[0], sizeof(FileBlock)) == -1){
-			fprintf(stderr,"Errore nella get next block file\n");
+			//fprintf(stderr,"Errore nella get next block file\n");
 			free(index);
 			free(next);
+			free(next_file);
 			return NULL;
 		}
 		free(index);
@@ -1058,7 +1058,8 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	//R. Caso in cui mi trovo ancora nello stesso blocco index
 	FileBlock* next_file = (FileBlock*)malloc(sizeof(FileBlock));
 	if(DiskDriver_readBlock(disk, next_file, index->blocks[current_position + 1], sizeof(FileBlock)) == -1){
-			fprintf(stderr,"Errore nella get next block file\n");
+			//fprintf(stderr,"Errore nella get next block file\n");
+			free(next_file);
 			free(index);
 			return NULL;
 		}
@@ -1070,30 +1071,32 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 
 //A. Funzione che restituisce il blocco successivo directory
 DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk){
-	BlockIndex* index = get_block_index_directory(directory,disk); //R. Estraggo il blocco index
+	BlockIndex* index = get_block_index_directory(directory,disk); //A. Estraggo il blocco index
 	if(index == NULL){
-		fprintf(stderr,"Errore nella get next block directory\n");
+		//fprintf(stderr,"Error in get next block directory\n");
 		return NULL;
 	}
 	
 	int current_position = directory->position; //A. posizione nell'array index
 	 
-	//A. Caso in cui devo andare nel blocco index successivo
+	//R. Caso in cui devo andare nel blocco index successivo
 	if((current_position + 1) == MAX_BLOCKS){
 		if(index->next == -1){
-			fprintf(stderr,"Error in get next block directory\n");
+			//fprintf(stderr,"Error in get next block directory\n");
 			free(index);
 			return NULL;
 		}
 		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
 		if(DiskDriver_readBlock(disk, next, index->next, sizeof(BlockIndex)) == -1){
-			fprintf(stderr,"Errore nella get next block directory\n");
+			//fprintf(stderr,"Errore nella get next block directory\n");
+			free(next);
 			free(index);
 			return NULL;
 		}
 		DirectoryBlock* next_directory = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 		if(DiskDriver_readBlock(disk, next_directory, next->blocks[0], sizeof(DirectoryBlock)) == -1){
-			fprintf(stderr,"Errore nella get next block directory\n");
+			//fprintf(stderr,"Errore nella get next block directory\n");
+			free(next_directory);
 			free(index);
 			free(next);
 			return NULL;
@@ -1107,12 +1110,13 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 	//A. Caso in cui mi trovo ancora nello stesso blocco index
 	DirectoryBlock* next_directory = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 	if(DiskDriver_readBlock(disk, next_directory, index->blocks[current_position + 1], sizeof(DirectoryBlock)) == -1){
-			fprintf(stderr,"Errore nella get next block directory\n");
+			//fprintf(stderr,"Errore nella get next block directory\n");
+			free(next_directory);
 			free(index);
 			return NULL;
 		}
 	free(index);
-		
+	
 	return next_directory;
 	}
 }

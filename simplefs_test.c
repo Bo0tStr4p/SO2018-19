@@ -54,7 +54,7 @@ int main(int agc, char** argv) {
 	printf("Press any key to continue...");
 	getchar();
 	
-	printf("%s-----------------------------------------------------\nTest starting...\n\n",KNRM);					
+	printf("%s\n-----------------------------------------------------\nTest starting...\n\n",KNRM);					
 	
 	const char* filename = "./simple_fs_test.txt";
 	
@@ -159,11 +159,48 @@ int main(int agc, char** argv) {
         free(disk);
 		return -1;
 	}
-	
 	printf("\n\n-----------------------------------------------------\n\n");
 	
-	printf("%s\nTESTATO FINO A QUI\n%s",KRED,KNRM);
+	printf("Open file casa.txt (Expected: OK)... ");
+	FileHandle* casa_file_handle = SimpleFS_openFile(current_dir, "casa.txt"); 
+    if (casa_file_handle == NULL) {
+        fprintf(stderr,"%sError: openFile on casa.txt.\n%s",KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+		return -1;
+    }
+    printf("%sOK%s, opened file: %s\n", KGRN,KNRM, casa_file_handle->fcb->fcb.name);
+    if(casa_file_handle != NULL)
+		SimpleFS_close_file(casa_file_handle);
+    
+    printf("Open file mare.txt (Expected: OK)... ");
+	FileHandle* mare_file_handle = SimpleFS_openFile(current_dir, "mare.txt"); 
+    if (casa_file_handle == NULL) {
+        fprintf(stderr,"%sError: openFile on mare.txt.\n%s",KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+		return -1;
+    }
+    printf("%sOK%s, opened file: %s\n", KGRN,KNRM, mare_file_handle->fcb->fcb.name);
+    if(mare_file_handle != NULL)
+		SimpleFS_close_file(mare_file_handle);
 	
+	printf("Open file auto.txt (Expected: Error)... ");
+	FileHandle* auto_file_handle = SimpleFS_openFile(current_dir, "auto.txt"); 
+    if (auto_file_handle != NULL){ 
+		printf("%sOK%s, opened file: %s\n", KRED,KNRM, auto_file_handle->fcb->fcb.name);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("%sError: could not open file auto.txt\n%s",KGRN,KNRM);
+    if(auto_file_handle != NULL)
+		SimpleFS_close_file(auto_file_handle);
+	
+	printf("\n-----------------------------------------------------\n\n");
+	
+	printf("%s\nTESTATO FINO A QUI\n%s",KRED,KNRM);
+		
 	// Chiudo tutto
 	
 	//Chiudo i FileHandle Aperti
