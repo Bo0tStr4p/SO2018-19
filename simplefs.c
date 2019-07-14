@@ -219,7 +219,6 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	//file_handle->current_block = NULL;							//A. prima ci assegnavo un FileBlock, da rivedere anche qua
 	file_handle->pos_in_file = 0;
 	
-	free(file_to_create);
 	free(file);
 	return file_handle;
 }
@@ -375,9 +374,9 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 
 
 // closes a file handle (destroyes it)
-int SimpleFS_close(FileHandle* f){
+int SimpleFS_close_file(FileHandle* f){
 	free(f->fcb);
-	free(f->current_block);
+	//free(f->current_block);
 	free(f);
 	return 0;
 }

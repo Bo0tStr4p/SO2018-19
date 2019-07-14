@@ -12,7 +12,7 @@
 int main(int agc, char** argv) { 	
 	
 	printf("%s\nHello, with this program you can test the correct functioning of the simpleFS library with inode.\n",KYEL);
-	printf("Use cat on index_test.txt to see all the changes.\n\n");
+	printf("Use cat on simplefs_test.txt to see all the changes.\n\n");
 	printf("Press any key to continue...");
 	getchar();
 	
@@ -20,10 +20,7 @@ int main(int agc, char** argv) {
 	
 	const char* filename = "./simple_fs_test.txt";
 	
-	int status = remove(filename);
-	if(status != 0){
-		return -1;
-	}
+	remove(filename);
 	
 	SimpleFS* simple_fs = (SimpleFS*)malloc(sizeof(SimpleFS));
 	if(simple_fs == NULL){
@@ -34,6 +31,7 @@ int main(int agc, char** argv) {
 	DiskDriver* disk = (DiskDriver*)malloc(sizeof(DiskDriver));
 	if(disk == NULL){
 		fprintf(stderr,"%sError: malloc on disk.\n%s",KRED,KNRM);
+		free(simple_fs);
 		return -1;
 	}
 	
@@ -63,6 +61,8 @@ int main(int agc, char** argv) {
 	FileHandle* file1 = SimpleFS_createFile(current_dir,"casa.txt");
 	if(file1 == NULL){
 		fprintf(stderr,"%sError: Could not create file casa.txt\n%s",KRED,KNRM);
+		free(simple_fs);
+		free(disk);
 		return -1;
 	}
 	printf("%sOK%s",KGRN,KNRM);
@@ -71,6 +71,8 @@ int main(int agc, char** argv) {
 	FileHandle* file2 = SimpleFS_createFile(current_dir,"mare.txt");
 	if(file2 == NULL){
 		fprintf(stderr,"Error: Could not create file mare.txt\n");
+		free(simple_fs);
+		free(disk);
 		return -1;
 	}
 	printf("%sOK%s",KGRN,KNRM);
@@ -79,6 +81,8 @@ int main(int agc, char** argv) {
 	FileHandle* file3 = SimpleFS_createFile(current_dir,"luna.txt");
 	if(file3 == NULL){
 		fprintf(stderr,"Error: Could not create file luna.txt");
+		free(simple_fs);
+		free(disk);
 		return -1;
 	}
 	printf("%sOK%s",KGRN,KNRM);
@@ -87,6 +91,8 @@ int main(int agc, char** argv) {
 	FileHandle* file4 = SimpleFS_createFile(current_dir,"sole.txt");
 	if(file4 == NULL){
 		fprintf(stderr,"Error: Could not create file sole.txt");
+		free(simple_fs);
+		free(disk);
 		return -1;
 	}
 	printf("%sOK%s",KGRN,KNRM);
@@ -98,11 +104,24 @@ int main(int agc, char** argv) {
 	}
 	else{
 		fprintf(stderr,"%sOK%s",KRED,KNRM);
+		free(simple_fs);
+		free(disk);
 		return -1;
 	}
 	
 	printf("%s\nTESTATO FINO A QUI\n%s",KRED,KNRM);
 	
+	//Chiudo i FileHandle Aperti
+	if(file1 != NULL)
+		SimpleFS_close_file(file1);
+	if(file2 != NULL)
+		SimpleFS_close_file(file2);
+	if(file3 != NULL)
+		SimpleFS_close_file(file3);
+	if(file4 != NULL)
+		SimpleFS_close_file(file4);
+	if(file5 != NULL)
+		SimpleFS_close_file(file5);
 	
 	//Faccio le free delle strutture create
 	free(simple_fs);

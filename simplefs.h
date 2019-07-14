@@ -130,7 +130,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename);
 
 
 // closes a file handle (destroyes it)
-int SimpleFS_close(FileHandle* f);
+int SimpleFS_close_file(FileHandle* f);
 
 // writes in the file, at current position for size bytes stored in data
 // overwriting and allocating new space if necessary
