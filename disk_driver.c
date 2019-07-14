@@ -124,8 +124,8 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num, int bytes_
     bitmap.entries = disk->bitmap_data;
 
     //R. Qui devo andare a verificare che il blocco a cui voglio andare ad accedere non sia già scritto
-    if(!BitMap_is_free_block(&bitmap, block_num)){ //R. FUNZIONE MANCANTE, DEVE SCRIVERLA ALESSANDRO
-		fprintf(stderr,"Error: Could't read a free block");
+    if(!BitMap_is_free_block(&bitmap, block_num)){ 
+		//fprintf(stderr,"Error: Could't read a free block"); //R. Only Debug
         return -1;
     }
     
