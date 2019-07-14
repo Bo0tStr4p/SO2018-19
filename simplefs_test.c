@@ -9,6 +9,44 @@
 #define KYEL  "\x1B[33m"
 #define KCYN  "\x1B[36m"
 
+//Funzione per leggere la directory corrente
+int readDirectory(DirectoryHandle* current_dir){
+	int i;
+	int* flag = (int*)malloc(current_dir->dcb->num_entries * sizeof(int));
+	if(flag == NULL){
+		fprintf(stderr,"%sError: malloc of flag.\n%s",KRED,KNRM);
+		return -1;
+	}
+	
+	char** contents = (char**)malloc(current_dir->dcb->num_entries * sizeof(char*));    
+	if(contents == NULL){
+		fprintf(stderr,"%sError: malloc of contents.\n%s",KRED,KNRM);
+		return -1;
+	}
+	
+    if(SimpleFS_readDir(contents, flag, current_dir) == -1){
+        fprintf(stderr,"%sError: could not use readDir.\n%s",KRED,KNRM);
+        return -1;
+    }
+	
+	printf("content of %s\n\n",current_dir->dcb->fcb.name);
+
+    for (i = 0; i < current_dir->dcb->num_entries; i++) {
+		//IsDir
+		if(flag[i]){
+			printf("%s%s%s ",KCYN,contents[i],KNRM);
+		}
+		//IsFile
+		else{
+			printf("%s%s%s ",KGRN,contents[i],KNRM);
+		} 
+        free(contents[i]); 
+	} 
+    free(contents);
+    free(flag);
+    return 0;
+}
+
 int main(int agc, char** argv) { 	
 	
 	printf("%s\nHello, with this program you can test the correct functioning of the simpleFS library with inode.\n",KYEL);
@@ -51,11 +89,14 @@ int main(int agc, char** argv) {
 	}
 	else{
 		printf("FileSystem initialized previously. Recovery of structures.\n");
+		current_dir = SimpleFS_init(simple_fs,disk);
 	}
 	
-	printf("\nCurrent directory: %s\n", current_dir->dcb->fcb.name);
+	printf("\nCurrent directory: %s\n\n", current_dir->dcb->fcb.name);
 	
-	//printf("\n-----------------------------------------------------\n");
+	printf("-----------------------------------------------------\n");
+	
+	//Testo le create file
 	
 	printf("\nCreation of casa.txt (Expected: OK)... ");
 	FileHandle* file1 = SimpleFS_createFile(current_dir,"casa.txt");
@@ -109,7 +150,21 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	
+	printf("\n-----------------------------------------------------\n\n");
+	
+	//Leggo il contenuto della directory /
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
 	printf("%s\nTESTATO FINO A QUI\n%s",KRED,KNRM);
+	
+	// Chiudo tutto
 	
 	//Chiudo i FileHandle Aperti
 	if(file1 != NULL)
@@ -122,10 +177,10 @@ int main(int agc, char** argv) {
 		SimpleFS_close_file(file4);
 	if(file5 != NULL)
 		SimpleFS_close_file(file5);
+	if(current_dir != NULL)
+		SimpleFS_close_directory(current_dir);
 	
 	//Faccio le free delle strutture create
 	free(simple_fs);
 	free(disk);
-	free(current_dir->dcb);
-	free(current_dir);
 }
