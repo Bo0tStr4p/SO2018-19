@@ -34,7 +34,7 @@ int readDirectory(DirectoryHandle* current_dir){
     for (i = 0; i < current_dir->dcb->num_entries; i++) {
 		//IsDir
 		if(flag[i]){
-			printf("%s%s%s ",KCYN,contents[i],KNRM);
+			printf("%s%s%s ",KYEL,contents[i],KNRM);
 		}
 		//IsFile
 		else{
@@ -198,8 +198,31 @@ int main(int agc, char** argv) {
 		SimpleFS_close_file(auto_file_handle);
 	
 	printf("\n-----------------------------------------------------\n\n");
+
+	printf("Creation of directory home (Expected: Ok)... ");
+	if(SimpleFS_mkDir(current_dir, "home") == -1){
+        fprintf(stderr,"%sError: could not create directory home.\n%s",KRED,KNRM);
+        return -1;
+    }
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    printf("Creation of directory home (Expected: Error)... ");
+	if(SimpleFS_mkDir(current_dir, "home") != -1){
+        fprintf(stderr,"%sOK.\n%s",KRED,KNRM);
+        //return -1;
+    }
+    //printf("%s Error: directory already exists.%s\n",KGRN,KNRM);
+    
+    printf("\n-----------------------------------------------------\n\n");
 	
-	printf("%s\nTESTATO FINO A QUI\n%s",KRED,KNRM);
+	//Leggo il contenuto della directory /
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
 		
 	// Chiudo tutto
 	

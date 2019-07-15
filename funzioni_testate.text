@@ -7,11 +7,11 @@ SimpleFS_close_directory -> OK anche con Valgrind
 SimpleFS_seek -> OK anche con Valgrind
 
 SimpleFS_openFile -> OK con Valgrind manca una free
+SimpleFS_mkDir -> Valgrind è ok, il controllo se la directory già esiste non funziona bene
 
 RESTANO DA TESTARE
 SimpleFS_write
 SimpleFS_read
 SimpleFS_changeDir
-SimpleFS_mkDir
 SimpleFS_remove
 
