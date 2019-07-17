@@ -27,6 +27,8 @@ int readDirectory(DirectoryHandle* current_dir){
 	
     if(SimpleFS_readDir(contents, flag, current_dir) == -1){
         fprintf(stderr,"%sError: could not use readDir.\n%s",KRED,KNRM);
+        free(flag);
+        free(contents);
         return -1;
     }
 	
@@ -372,10 +374,45 @@ int main(int agc, char** argv) {
 	
     if (SimpleFS_changeDir(current_dir, "home") == -1) {
        fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
-        exit(EXIT_FAILURE); 
+       free(simple_fs);
+       free(disk);
+       return -1; 
     }
     
 	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
+	
+	//Leggo il contenuto della directory home
+	printf("Reading directory home. (Expected: Error)\n");
+	if(readDirectory(current_dir) != -1){
+		fprintf(stderr,"%s OK%s\n",KGRN,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("%sError: could not read current dir.\n%s",KRED,KNRM);
+	
+	printf("\n-----------------------------------------------------\n\n");
+	
+	printf("Change directory, we go back in / (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "..") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
 	
 	// Chiudo tutto
 	

@@ -703,9 +703,9 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		
 		//A. Estraggo il primo DirectoryBlock
 		DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
-			if(db == NULL){
-				fprintf(stderr,"Error in SimpleFS_already_exists_file: malloc on db in SimpleFS_already_exists");
-				return -1;
+		if(db == NULL){
+			fprintf(stderr,"Error in SimpleFS_already_exists_file: malloc on db in SimpleFS_already_exists");
+			return -1;
 		}
 	
 		if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
