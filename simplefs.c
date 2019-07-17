@@ -787,11 +787,12 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 	
 	dir_to_create->fcb.directory_block = fdb->fcb.block_in_disk;
 	dir_to_create->fcb.block_in_disk = new_block;
-	strcpy(dir_to_create->fcb.name, dirname);
+	strncpy(dir_to_create->fcb.name, dirname,128);
 	dir_to_create->fcb.written_bytes = 0;
 	dir_to_create->fcb.size_in_bytes = 0;
 	dir_to_create->fcb.size_in_blocks = 0;
 	dir_to_create->fcb.is_dir = 1;
+	dir_to_create->num_entries = 0;
 	
 	BlockIndex index = create_block_index(-1);
 	

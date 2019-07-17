@@ -175,7 +175,7 @@ int main(int agc, char** argv) {
     
     printf("Open file mare.txt (Expected: OK)... ");
 	FileHandle* mare_file_handle = SimpleFS_openFile(current_dir, "mare.txt"); 
-    if (casa_file_handle == NULL) {
+    if (mare_file_handle == NULL) {
         fprintf(stderr,"%sError: openFile on mare.txt.\n%s",KRED,KNRM);
         free(simple_fs);
         free(disk);
@@ -243,4 +243,5 @@ int main(int agc, char** argv) {
 	//Faccio le free delle strutture create
 	free(simple_fs);
 	free(disk);
+	
 }
