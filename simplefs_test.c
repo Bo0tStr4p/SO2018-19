@@ -368,6 +368,15 @@ int main(int agc, char** argv) {
 	
 	printf("\n-----------------------------------------------------\n\n");
 	
+	printf("Change directory, we move in home (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "home") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+        exit(EXIT_FAILURE); 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	
 	// Chiudo tutto
 	
 	//Chiudo i FileHandle Aperti

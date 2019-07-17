@@ -699,8 +699,20 @@ int SimpleFS_seek(FileHandle* f, int pos){
 	else{
 		//A. caso normale in cui mi sposto semplicemente in un' altra cartella
 		FirstDirectoryBlock* fdb = d->dcb;
-		DirectoryBlock* db = d->current_block;
 		DiskDriver* disk = d->sfs->disk;
+		
+		//A. Estraggo il primo DirectoryBlock
+		DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+			if(db == NULL){
+				fprintf(stderr,"Error in SimpleFS_already_exists_file: malloc on db in SimpleFS_already_exists");
+				return -1;
+		}
+	
+		if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
+			fprintf(stderr,"Error in SimpleFS_already_exists_file: could not read directory block one.\n");
+			free(db);
+			return -1;
+		}
 		
 		//A. Controllo se la cartella in cui mi devo spostare è in questo blocco directory
 		FirstDirectoryBlock* dir_dest = malloc(sizeof(FirstDirectoryBlock));
@@ -714,6 +726,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 					d->pos_in_block = 0; 
 					d->parent_dir = fdb;
 					d->dcb = dir_dest;
+					free(db);
 					return 0;
 				}
 			}
@@ -729,6 +742,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 			res = DiskDriver_readBlock(disk,dir_dest,pos_in_disk,sizeof(FirstDirectoryBlock));
 			if(res == -1){
 				fprintf(stderr, "Errore in SimpleFS_changeDir: errore della readBlock\n");
+				free(db);
 				return -1;
 			}
 			for(i=0; i<dim; i++){
@@ -738,6 +752,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 						d->pos_in_block = 0;
 						d->parent_dir = fdb;
 						d->dcb = dir_dest;
+						free(db);
 						return 0;
 					}
 				}
@@ -746,6 +761,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		}
 		
 		fprintf(stderr, "Errore: non si può cambiare directory\n");
+		free(db);
 		return -1;
 	}
 }
