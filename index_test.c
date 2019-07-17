@@ -290,7 +290,7 @@ int main(int argc, char** argv){
 		printf("Reading block %d to disk (Expected: Ok)... ",i+1);
 		
 		file_block_tmp = get_next_block_file(current,my_disk);
-		free(current);
+		//free(current);
 		printf("%sOK%s\nDATA:\n",KGRN,KNRM);
 	printf("%s%s%s\n\n", KYEL, file_block_tmp->data, KNRM);
 		
@@ -494,7 +494,7 @@ int main(int argc, char** argv){
 		printf("Reading block %d to disk (Expected: Ok)... ",i+1);
 		
 		directory_block_tmp = get_next_block_directory(current_dir,my_disk);
-		free(current_dir);
+		//free(current_dir);
 		
 		printf("%sOK%s\nFILE BLOCKS:\n",KGRN,KNRM);
 	
