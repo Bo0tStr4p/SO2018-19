@@ -1052,6 +1052,7 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	BlockIndex* index = get_block_index_file(file,disk); //R. Estraggo il blocco index
 	if(index == NULL){
 		//fprintf(stderr,"Error in get next block file\n");
+		free(file);
 		return NULL;
 	}
 	
@@ -1062,6 +1063,7 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 		if(index->next == -1){
 			//fprintf(stderr,"Error in get next block file\n");
 			free(index);
+			free(file);
 			return NULL;
 		}
 		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
@@ -1069,6 +1071,7 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 			//fprintf(stderr,"Errore nella get next block file\n");
 			free(index);
 			free(next);
+			free(file);
 			return NULL;
 		}
 		FileBlock* next_file = (FileBlock*)malloc(sizeof(FileBlock));
@@ -1077,10 +1080,12 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 			free(index);
 			free(next);
 			free(next_file);
+			free(file);
 			return NULL;
 		}
 		free(index);
 		free(next);
+		free(file);
 		
 		return next_file;
 	}
@@ -1091,9 +1096,11 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 			//fprintf(stderr,"Errore nella get next block file\n");
 			free(next_file);
 			free(index);
+			free(file);
 			return NULL;
 		}
 	free(index);
+	free(file);
 	
 	return next_file;
 	}
@@ -1104,6 +1111,7 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 	BlockIndex* index = get_block_index_directory(directory,disk); //A. Estraggo il blocco index
 	if(index == NULL){
 		//fprintf(stderr,"Error in get next block directory\n");
+		free(directory);
 		return NULL;
 	}
 	
@@ -1114,6 +1122,7 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 		if(index->next == -1){
 			//fprintf(stderr,"Error in get next block directory\n");
 			free(index);
+			free(directory);
 			return NULL;
 		}
 		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
@@ -1121,6 +1130,7 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 			//fprintf(stderr,"Errore nella get next block directory\n");
 			free(next);
 			free(index);
+			free(directory);
 			return NULL;
 		}
 		DirectoryBlock* next_directory = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
@@ -1129,10 +1139,12 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 			free(next_directory);
 			free(index);
 			free(next);
+			free(directory);
 			return NULL;
 		}
 		free(index);
 		free(next);
+		free(directory);
 		
 		return next_directory;
 	}
@@ -1143,9 +1155,11 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 			//fprintf(stderr,"Errore nella get next block directory\n");
 			free(next_directory);
 			free(index);
+			free(directory);
 			return NULL;
 		}
 	free(index);
+	free(directory);
 	
 	return next_directory;
 	}
