@@ -211,7 +211,7 @@ int main(int agc, char** argv) {
         fprintf(stderr,"%sOK.\n%s",KRED,KNRM);
         //return -1;
     }
-    //printf("%s Error: directory already exists.%s\n",KGRN,KNRM);
+    printf("%s Error: directory already exists.%s\n",KGRN,KNRM);
     
     printf("\n-----------------------------------------------------\n\n");
 	

@@ -767,10 +767,15 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 	//DirectoryBlock* db = d->current_block;
 	
 	//A. Controlliamo prima che la directory che sto creando non esista già
-	if(SimpleFS_already_exists(disk,fdb,dirname) == -1){
-		fprintf(stderr, "Errore in SimpleFS_mkDir: l'elemento già esiste opppure la SImpleFS_already_exists restituisce errore");
+	int ret = SimpleFS_already_exists(disk,fdb,dirname);
+	if(ret == -1){
+		fprintf(stderr, "Errore in SimpleFS_mkDir: l SimpleFS_already_exists restituisce errore");
 		return -1;
 	}
+	if(ret != -2){
+		//fprintf(stderr, "Errore in SimpleFS_mkDir: la directory che stai creando é già presente sul disco\n");
+		return -1;
+	} 
 	
 	//A. Ora che sappiamo che non esiste un' altra cartella con lo stesso nome, possiamo continuare con la creazione
 	int new_block = DiskDriver_getFreeBlock(disk,disk->header->first_free_block);
