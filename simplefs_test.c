@@ -2,6 +2,7 @@
 #include "bitmap.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
@@ -56,6 +57,7 @@ int main(int agc, char** argv) {
 	
 	printf("%s\n-----------------------------------------------------\nTest starting...\n\n",KNRM);					
 	
+	int i;
 	const char* filename = "./simple_fs_test.txt";
 	
 	remove(filename);
@@ -223,7 +225,149 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
-		
+	
+	//Test per write and read. Prima scrivo sul file, poi leggo.
+	printf("Writing on casa.txt (Expected: Ok)... ");
+	char* to_write = (char*)malloc(129*sizeof(char));
+	if(to_write == NULL){
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+    memset(to_write, 0x57, 128);
+    if (SimpleFS_write(file1, to_write, 128) != 128) {
+        fprintf(stderr, "%sError: could not write on file.\n%s", KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+        free(to_write);
+        return -1; 
+    }
+    
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    printf("\nBuffer written on casa.txt:\n");
+    
+    for(i=0; i<128; i++){
+		printf("%c ", to_write[i]);
+	}
+	printf("\n\n");
+	
+	printf("Reading casa.txt (Expected: Ok)... ");
+	char* to_read = (char*)malloc(129*sizeof(char));
+	if(to_read == NULL){
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+    
+    if (SimpleFS_read(file1, to_read, 128) != 128) {
+        fprintf(stderr, "%sError: could not read the file.\n%s", KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+        free(to_read);
+        return -1;
+    }
+    
+    printf("%s OK%s\n",KGRN,KNRM);
+	
+	printf("\nContent read:\n");
+	for(i=0; i<128; i++){
+		printf("%c ", to_read[i]);
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	//Vado a scrivere altri dati oltre a quelli scritti prima
+	printf("Writing on casa.txt (Expected: Ok)... ");
+    memset(to_write, 0x56, 128);
+    if (SimpleFS_write(file1, to_write, 128) != 128) {
+        fprintf(stderr, "%sError: could not write on file.\n%s", KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+        free(to_write);
+        return -1; 
+    }
+    
+    printf("%s OK%s\n",KGRN,KNRM);
+   
+    printf("\nBuffer written on casa.txt:\n");
+    for(i=0; i<128; i++){
+		printf("%c ", to_write[i]);
+	}
+	printf("\n\n");
+	
+	printf("Reading casa.txt (Expected: Ok)... ");
+    if (SimpleFS_read(file1, to_read, 128) != 128) {
+        fprintf(stderr, "%sError: could not read the file.\n%s", KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+        free(to_read);
+        return -1;
+    }
+    
+    printf("%s OK%s\n",KGRN,KNRM);
+	
+	printf("\nContent read:\n");
+	for(i=0; i<128; i++){
+		printf("%c ", to_read[i]);
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	//Azzero la posizione del cursore nel file in modo tale che dopo posso fare la read su tutto il file
+	printf("Seeking in casa.txt (Expected: Ok)... ");
+	if (SimpleFS_seek(file1, 0) == -1) {
+		fprintf(stderr, "%sError: seek doesn't work.\n%s", KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+        return -1; 
+    } 
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    printf("\n-----------------------------------------------------\n\n");
+	
+	char* to_read2 = (char*)malloc(257*sizeof(char));
+	if(to_read2 == NULL){
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("Reading casa.txt from the beginning (Expected: Ok)... ");
+    if (SimpleFS_read(file1, to_read2, 256) != 256) {
+        fprintf(stderr, "%sError: could not read the file.\n%s", KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+        free(to_read2);
+        return -1;
+    }
+    
+    printf("%s OK%s\n",KGRN,KNRM);
+	
+	printf("\nContent read:\n");
+	for(i=0; i<256; i++){
+		printf("%c ", to_read2[i]);
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	
+	printf("Seeking in casa.txt (Expected: Ok)... ");
+	if (SimpleFS_seek(file1, 128) == -1) {
+		fprintf(stderr, "%sError: seek doesn't work.\n%s", KRED,KNRM);
+        free(simple_fs);
+        free(disk);
+        return -1; 
+    } 
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    printf("Seeking in casa.txt (Expected: Error)... ");
+	if (SimpleFS_seek(file1, 512) != -1) {
+		fprintf(stderr,"%sOK.\n%s",KRED,KNRM);
+	} 
+    printf("%sError: seek doesn't work.\n%s", KRED,KNRM);
+	
+	printf("\n-----------------------------------------------------\n\n");
+	
 	// Chiudo tutto
 	
 	//Chiudo i FileHandle Aperti
@@ -240,6 +384,10 @@ int main(int agc, char** argv) {
 	if(current_dir != NULL)
 		SimpleFS_close_directory(current_dir);
 	
+	//Faccio le free dei buffer
+	free(to_write);
+	free(to_read);
+	free(to_read2);
 	//Faccio le free delle strutture create
 	free(simple_fs);
 	free(disk);
