@@ -875,7 +875,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		return -1;
 	}
 		
-	int i,res, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int i,res, id = -1, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
 	int pos = -1;
 	
 	DiskDriver* disk = d->sfs->disk;
@@ -889,11 +889,54 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 	}
 	
 	//A. La directory non è vuota. Cerco il file nei blocchi directory
+	/*
 	pos = SimpleFS_already_exists(disk,fdb,filename);
 	if(pos == -1){
 		fprintf(stderr, "Errore in SimpleFS_remove: l'elemento che si sta cercando non è in questa directory");
 		return -1;
 	}
+	*/
+	
+	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(db == NULL){
+		fprintf(stderr,"Error in SimpleFS_already_exists_file: malloc on db in SimpleFS_already_exists");
+		return -1;
+	}
+	
+	if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
+		fprintf(stderr,"Error in SimpleFS_already_exists_file: could not read directory block one.\n");
+		free(db);
+		return -1;
+	}
+	
+	FirstFileBlock ffb_to_check;
+	//int pos_in_disk;
+	
+	while(db != NULL && id == -1){
+		
+		for(i=0; i<dim; i++){
+			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
+				if(strcmp(ffb_to_check.fcb.name,filename) == 0){ 						
+					//esiste già un elemento con lo stesso nome presente sul disco
+					pos = db->file_blocks[i];
+					id = i;
+					break;
+				}
+			}
+		}
+		if(id != -1) break;
+		db = get_next_block_directory(db,disk);
+	}
+	//printf("db:%d\n", db->file_blocks[id]);
+	//printf("pos:%d\n", pos);
+	//FINE RICERCA
+	
+	//Ricerca del file finita
+	if(pos == -1){
+		fprintf(stderr, "Errore in SimpleFS_remove: l'elemento che si sta cercando non è in questa directory");
+		return -1;
+	}
+	
 	
 	FirstFileBlock* ffb_toRemove = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
 	if(ffb_toRemove == NULL){
@@ -922,13 +965,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			fprintf(stderr,"Errore in SimpleFS_remove: lettura del FileBlock fallita\n");
 			return -1;
 		}
-		/*
-		FileBlock* next_block = get_next_block_file(current_fb,disk);
-		if(next_block == NULL){
-			fprintf(stderr,"Error in SimpleFS_remove: get_next_block_file error\n");
-			return -1;
-		}
-		*/
+		
 		//A. elimino tutti i FileBlock del file
 		while(current_fb != NULL){
 			fb_pos_in_disk = get_position_disk_file_block(current_fb,disk);
@@ -953,10 +990,27 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			return -1;
 		}
 		
+		db->file_blocks[id] = 0;
 		fdb->num_entries--;
 		d->dcb = fdb; //A. ripristino la directory che precedentemente ho scorso
-		free(ffb_toRemove);
 		
+		//A. Aggiorno il FirsDirectoryBlock e il DirectoryBlock da cui ho tolto il file
+		if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
+			fprintf(stderr,"Errore in SimpleFS_remove: updateBlock di fdb.\n");
+			free(db);
+			return -1;
+		}
+	
+		//A. E aggiorno il DirectoryBlock da cui ho tolto il file
+		int pos_db = get_position_disk_directory_block(db,disk);
+		if(DiskDriver_updateBlock(disk, db, pos_db, sizeof(DirectoryBlock)) == -1){
+			fprintf(stderr,"Errore in SimpleFS_remove: updateBlock di db.\n");
+			free(db);
+			return -1;
+		}
+		
+		free(ffb_toRemove);
+		free(db);
 		return 0;
 	}
 	//A. sto eliminando invece una directory
