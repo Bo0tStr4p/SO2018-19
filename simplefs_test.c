@@ -414,6 +414,23 @@ int main(int agc, char** argv) {
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
 	
+	
+	printf("Removing file mare.txt (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "mare.txt") == -1) {
+		fprintf(stderr,"%sError: could not remove mare.txt.\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	
 	// Chiudo tutto
 	
 	//Chiudo i FileHandle Aperti

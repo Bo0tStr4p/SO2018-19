@@ -701,24 +701,30 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		FirstDirectoryBlock* fdb = d->dcb;
 		DiskDriver* disk = d->sfs->disk;
 		
+		FirstDirectoryBlock* dir_dest = (FirstDirectoryBlock*) malloc(sizeof(FirstDirectoryBlock));
+		if(dir_dest == NULL){
+			fprintf(stderr,"Error in SimpleFS_changeDir: could not create first directory block.\n");
+			return -1;
+		}
+		
 		//A. Estraggo il primo DirectoryBlock
 		DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 		if(db == NULL){
-			fprintf(stderr,"Error in SimpleFS_already_exists_file: malloc on db in SimpleFS_already_exists");
+			fprintf(stderr,"Error in SimpleFS_changeDir: malloc on db in SimpleFS_changeDir");
 			return -1;
 		}
 	
 		if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
-			fprintf(stderr,"Error in SimpleFS_already_exists_file: could not read directory block one.\n");
+			fprintf(stderr,"Error in SimpleFS_changeDir: could not read directory block one.\n");
 			free(db);
+			free(dir_dest);
 			return -1;
 		}
 		
 		//A. Controllo se la cartella in cui mi devo spostare è in questo blocco directory
-		FirstDirectoryBlock* dir_dest = malloc(sizeof(FirstDirectoryBlock));
-		int i,res;
+		int i;
 		int dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
-		
+		/*
 		for(i=0; i<dim; i++){
 			if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
 				if(strcmp(dir_dest->fcb.name,dirname) == 0){
@@ -731,24 +737,24 @@ int SimpleFS_seek(FileHandle* f, int pos){
 				}
 			}
 		}
-		
+		*/
 		//A. Altrimenti continuo a cercare negli altri blocchi directory
-		int pos_in_disk;
-		DirectoryBlock* next_block = get_next_block_directory(db,disk);
+		//int pos_in_disk;
+		//DirectoryBlock* next_block = get_next_block_directory(db,disk);
 		
-		while(next_block != NULL){
-			pos_in_disk = get_position_disk_directory_block(next_block,disk);
+		while(db != NULL){
+			/*pos_in_disk = get_position_disk_directory_block(next_block,disk);
 			
 			res = DiskDriver_readBlock(disk,dir_dest,pos_in_disk,sizeof(FirstDirectoryBlock));
 			if(res == -1){
 				fprintf(stderr, "Errore in SimpleFS_changeDir: errore della readBlock\n");
 				free(db);
 				return -1;
-			}
+			}*/
 			for(i=0; i<dim; i++){
-				if(next_block->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,next_block->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
-					if(strcmp(dir_dest->fcb.name,dirname) == 0){
-						DiskDriver_readBlock(disk,dir_dest,next_block->file_blocks[i],sizeof(FirstDirectoryBlock));
+				if(db->file_blocks[i] > 0 && (DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock))) != -1){
+					if(strncmp(dir_dest->fcb.name,dirname,128) == 0){
+						//DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock));
 						d->pos_in_block = 0;
 						d->parent_dir = fdb;
 						d->dcb = dir_dest;
@@ -757,11 +763,12 @@ int SimpleFS_seek(FileHandle* f, int pos){
 					}
 				}
 			}
-			next_block = get_next_block_directory(next_block,disk);
+			db = get_next_block_directory(db,disk);
 		}
 		
-		fprintf(stderr, "Errore: non si può cambiare directory\n");
+		fprintf(stderr, "Errore in SimpleFS_changeDir: non si può cambiare directory\n");
 		free(db);
+		//free(dir_dest);
 		return -1;
 	}
 }
@@ -888,42 +895,50 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		return -1;
 	}
 	
-	FirstFileBlock ffb_toRemove;
+	FirstFileBlock* ffb_toRemove = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
+	if(ffb_toRemove == NULL){
+		fprintf(stderr, "Errore in SimpleFS_remove: can not malloc FirstFileBlock\n");
+		return -1;
+	}
 	
-	res = DiskDriver_readBlock(disk,&ffb_toRemove,pos,sizeof(FirstFileBlock));
+	res = DiskDriver_readBlock(disk,ffb_toRemove,pos,sizeof(FirstFileBlock));
 	if(res == -1){
 		fprintf(stderr,"Errore in SimpleFS_remove: lettura del FirstFileBlock fallita\n");
 		return -1;
 	};
 	
-	int isDir = ffb_toRemove.fcb.is_dir;
+	int isDir = ffb_toRemove->fcb.is_dir;
 	
 	//A. Verifico se sto rimuovendo un file o una cartella e mi regolo di conseguenza
 	//A. Non sono per niente sicuro sia corretto. Probabilmente dovrà essere fixato.
 	//A. Il problema è che vado a leggere un FileBlock nella stessa posizione in cui leggo prima il FirstFileBlock.
 	if(isDir == 0){
-		FileBlock current_fb;
+		FileBlock* current_fb = (FileBlock*)malloc(sizeof(FileBlock));
 		int fb_pos_in_disk = pos; 			//A. non vado ad alterare pos perchè mi servirà dopo per liberare il FirstFileBlock che è in posizione pos sul disco.
 		
-		//A. leggo uno dei FileBlock
-		res = DiskDriver_readBlock(disk, &current_fb, fb_pos_in_disk, sizeof(FileBlock));
+		//A. leggo il primo dei FileBlock
+		res = DiskDriver_readBlock(disk, current_fb, ffb_toRemove->index.blocks[0], sizeof(FileBlock));
 		if(res == -1){
 			fprintf(stderr,"Errore in SimpleFS_remove: lettura del FileBlock fallita\n");
 			return -1;
 		}
-		
-		FileBlock* next_block = get_next_block_file(&current_fb,disk);
-		
+		/*
+		FileBlock* next_block = get_next_block_file(current_fb,disk);
+		if(next_block == NULL){
+			fprintf(stderr,"Error in SimpleFS_remove: get_next_block_file error\n");
+			return -1;
+		}
+		*/
 		//A. elimino tutti i FileBlock del file
-		while(next_block != NULL){
-			fb_pos_in_disk = get_position_disk_file_block(next_block,disk);
+		while(current_fb != NULL){
+			fb_pos_in_disk = get_position_disk_file_block(current_fb,disk);
 				
-			res = DiskDriver_readBlock(disk, &current_fb, fb_pos_in_disk, sizeof(FileBlock));
+			res = DiskDriver_readBlock(disk, current_fb, fb_pos_in_disk, sizeof(FileBlock));
 			if(res == -1){
 				fprintf(stderr, "Errore in SimpleFS_remove: DiskDriver_readBlock non legge\n");
 				return -1;
 			}
-			next_block = get_next_block_file(next_block,disk);
+			current_fb = get_next_block_file(current_fb,disk);
 				
 			res = DiskDriver_freeBlock(disk,fb_pos_in_disk);
 			if(res == -1){
@@ -938,7 +953,9 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			return -1;
 		}
 		
+		fdb->num_entries--;
 		d->dcb = fdb; //A. ripristino la directory che precedentemente ho scorso
+		free(ffb_toRemove);
 		
 		return 0;
 	}
@@ -1067,7 +1084,7 @@ BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* dis
 FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	BlockIndex* index = get_block_index_file(file,disk); //R. Estraggo il blocco index
 	if(index == NULL){
-		//fprintf(stderr,"Error in get next block file\n");
+		fprintf(stderr,"Error in get next block file\n");
 		free(file);
 		return NULL;
 	}
