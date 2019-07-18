@@ -9,8 +9,7 @@ SimpleFS_openFile -> OK anche con Valgrind
 SimpleFS_mkDir -> Ok anche con Valgrind
 SimpleFS_write -> Ok anche con Valgrind
 SimpleFS_read -> Ok anche con Valgrind
-
-SimpleFS_changeDir -> Ok ma da problemi con una free
+SimpleFS_changeDir -> Ok anche con Valgrind
 
 RESTANO DA TESTARE
 SimpleFS_remove

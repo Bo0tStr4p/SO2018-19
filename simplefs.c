@@ -665,7 +665,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 			fprintf(stderr, "Errore in SimpleFS_changeDir: mi trovo nella directory root\n");
 			return -1;
 		}
-		
+		free(d->dcb);
 		int parent_block = d->parent_dir->fcb.directory_block;
 		d->pos_in_block = 0;
 		d->dcb = d->parent_dir;

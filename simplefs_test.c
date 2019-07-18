@@ -213,7 +213,7 @@ int main(int agc, char** argv) {
     printf("Creation of directory home (Expected: Error)... ");
 	if(SimpleFS_mkDir(current_dir, "home") != -1){
         fprintf(stderr,"%sOK.\n%s",KRED,KNRM);
-        //return -1;
+        return -1;
     }
     printf("%s Error: directory already exists.%s\n",KGRN,KNRM);
     
@@ -413,7 +413,7 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
-	
+
 	
 	printf("Removing file mare.txt (Expected: Ok)... ");
 	if (SimpleFS_remove(current_dir, "mare.txt") == -1) {
