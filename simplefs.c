@@ -398,8 +398,6 @@ int SimpleFS_close_directory(DirectoryHandle* f){
 // overwriting and allocating new space if necessary
 // returns the number of bytes written
 
-// R. ATTENZIONE -> IN FASE DI TEST BISOGNA CONTROLLARE SE TUTTE LE FREE SONO STATE INSERITE CORRETTAMENTE
-
 int SimpleFS_write(FileHandle* f, void* data, int size){
 	FirstFileBlock* ffb = f->fcb;
 	
@@ -536,8 +534,6 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 // reads in the file, at current position size bytes stored in data
 // overwriting and allocating new space if necessary
 // returns the number of bytes read
-
-// R. ATTENZIONE -> IN FASE DI TEST BISOGNA CONTROLLARE SE TUTTE LE FREE SONO STATE INSERITE CORRETTAMENTE
 
 int SimpleFS_read(FileHandle* f, void* data, int size){
 	FirstFileBlock* first_file = f->fcb; //R. Estraggo il FirstFileBlock
@@ -871,6 +867,233 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 //R. DA RIVEDERE PERCHE' CAMBIATO QUALCOSA
 int SimpleFS_remove(DirectoryHandle* d, char* filename){	
 	if(d == NULL || filename == NULL){
+		fprintf(stderr,"Error: could not use SimpleFS_remove. Bad parameters.\n");
+		return -1;
+	}
+	
+	int idx,i;
+	
+	FirstDirectoryBlock* fdb = d->dcb;
+	DiskDriver* disk = d->sfs->disk;
+	
+	DirectoryBlock* db_update = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(db_update == NULL){
+		fprintf(stderr, "Error: malloc on db_update.\n");
+		return -1;
+	}
+	
+	int exist_pos = SimpleFS_already_exists_remove(disk, fdb, filename, db_update, &idx);
+	if(exist_pos == -1 || exist_pos == -2){
+		fprintf(stderr,"Error: file or directory named %s doesn't exist.\n",filename);
+		free(db_update);
+		return -1;
+	}
+	
+	FirstFileBlock* ffb = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
+	if(ffb == NULL){
+		fprintf(stderr,"Error: malloc on ffb");
+		free(db_update);
+		return -1;
+	}
+	
+	if(DiskDriver_readBlock(disk, ffb, exist_pos, sizeof(FirstFileBlock)) == -1){
+		fprintf(stderr,"Error: read on ffb");
+		free(db_update);
+		free(ffb);
+		return -1;
+	}
+	
+	//R. Caso in cui dobbiamo rimuovere un file
+	if(ffb->fcb.is_dir == 0){
+		//R. Estraggo il primo file block
+		FileBlock* fb = (FileBlock*)malloc(sizeof(FileBlock));
+		if(fb == NULL){
+			fprintf(stderr,"Error: malloc on fb.\n");
+			free(ffb);
+			free(db_update);
+			return -1;
+		}
+		
+		FileBlock* next_fb = fb;
+		
+		if(DiskDriver_readBlock(disk, fb, ffb->index.blocks[0], sizeof(FileBlock)) == -1){
+			fprintf(stderr,"Error: read on ffb");
+			free(db_update);
+			free(ffb);
+			free(fb);
+			return -1;
+		}
+		
+		while(next_fb != NULL){
+			if(DiskDriver_freeBlock(disk, get_position_disk_file_block(fb, disk)) == -1){
+				fprintf(stderr,"Error: free_block.\n");
+				free(db_update);
+				free(ffb);
+				free(fb);
+			}
+			next_fb = get_next_block_file(fb, disk);
+			//free(fb);
+			fb = next_fb;
+		}
+		
+		if(DiskDriver_freeBlock(disk, exist_pos) == -1){
+				fprintf(stderr,"Error: free_block.\n");
+				free(ffb);
+				free(db_update);
+				if(fb!=NULL)
+					free(fb);
+			}
+		
+		free(ffb);
+		
+		db_update->file_blocks[idx] = 0;
+		fdb->num_entries -= 1;
+		
+		if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){
+			fprintf(stderr, "Error on update db_update.\n");
+			free(db_update);
+			return -1;
+		}
+		
+		if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
+			fprintf(stderr, "Error on update db_update.\n");
+			free(db_update);
+			return -1;
+		}
+		
+		free(db_update);
+		
+		d->dcb = fdb;
+		
+		return 0;
+		
+	}
+	//R. Caso in cui dobbiamo rimuovere una directory ricorsivamente
+	else{
+		FirstDirectoryBlock* fdb_to_remove = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
+		if(fdb_to_remove == NULL){
+			fprintf(stderr, "Error: malloc on fdb_to_remove.\n");
+			free(ffb);
+			free(db_update);
+		}
+		
+		if(DiskDriver_readBlock(disk, fdb_to_remove, exist_pos, sizeof(FirstDirectoryBlock)) == -1){
+			fprintf(stderr, "Error: read of fdb.\n");
+			free(db_update);
+			free(ffb);
+			free(fdb_to_remove);
+			return -1;
+		}
+		
+		if(fdb_to_remove->num_entries > 0){
+			
+			if(SimpleFS_changeDir(d, fdb_to_remove->fcb.name) == -1){
+				fprintf(stderr, "Error: change dir of fdb_to_remove.\n");
+				free(db_update);
+				free(fdb_to_remove);
+				free(ffb);
+			}
+			
+			//R. Estraggo il primo directory block
+			DirectoryBlock* dir_up = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+			if(dir_up == NULL){
+				fprintf(stderr,"Error: malloc on dir_up");
+				free(db_update);
+				free(ffb);
+				free(fdb_to_remove);
+				return -1;
+			}
+			
+			if(DiskDriver_readBlock(disk, dir_up, fdb_to_remove->index.blocks[0], sizeof(DirectoryBlock)) == -1){
+				fprintf(stderr, "Error: read of directory block one.\n");
+				free(db_update);
+				free(ffb);
+				free(fdb_to_remove);
+				free(dir_up);
+				return -1;
+			}
+			
+			while(dir_up != NULL){
+				for(i=0; i<((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int)); i++){
+					if(DiskDriver_readBlock(disk, ffb, dir_up->file_blocks[i], sizeof(FirstFileBlock)) == -1){
+						fprintf(stderr, "Error: read block FirstFileBlock.\n");
+						free(db_update);
+						free(ffb);
+						free(fdb_to_remove);
+						free(dir_up);
+						return -1;
+					}
+					SimpleFS_remove(d, ffb->fcb.name);
+				}
+			}
+			
+			if(DiskDriver_freeBlock(disk, exist_pos) == -1){
+				fprintf(stderr, "Error: free block of fdb.\n");
+				free(db_update);
+				free(ffb);
+				free(fdb_to_remove);
+				if(dir_up != NULL)
+					free(dir_up);
+				return -1;
+			}
+			
+			fdb->num_entries -= 1;
+			d->dcb = fdb;
+			
+			if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
+				fprintf(stderr, "Error on update db_update.\n");
+				return -1;
+			}
+			
+			free(db_update);
+			free(ffb);
+			free(fdb_to_remove);
+			if(dir_up != NULL)
+				free(dir_up);
+				
+			return 0;
+			
+		}
+		else{
+			if(DiskDriver_freeBlock(disk, exist_pos) == -1){
+				fprintf(stderr, "Error: free block of fdb.\n");
+				free(db_update);
+				free(ffb);
+				return -1;
+			}
+			
+			fdb->num_entries -= 1;
+			d->dcb = fdb;
+			
+			if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
+				fprintf(stderr, "Error on update db_update.\n");
+				return -1;
+			}
+			
+			free(fdb_to_remove);
+			free(db_update);
+			free(ffb);
+			
+			return 0;
+		}
+		
+	}
+		
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	/*
+	
+	if(d == NULL || filename == NULL){
 		fprintf(stderr,"Error in SimpleFS_remove: bad parameters.\n");
 		return -1;
 	}
@@ -889,13 +1112,12 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 	}
 	
 	//A. La directory non è vuota. Cerco il file nei blocchi directory
-	/*
+	
 	pos = SimpleFS_already_exists(disk,fdb,filename);
 	if(pos == -1){
 		fprintf(stderr, "Errore in SimpleFS_remove: l'elemento che si sta cercando non è in questa directory");
 		return -1;
 	}
-	*/
 	
 	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 	if(db == NULL){
@@ -1093,6 +1315,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		}
 	}
 	return 0;
+	*/
 }
 
 //==================================================================//
@@ -1540,6 +1763,78 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, char* el
 						if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){
 							//esiste già un elemento con lo stesso nome presente sul disco
 							elem_pos = db->file_blocks[i];
+							free(db);
+							return elem_pos;
+						}
+					}
+				}
+				db = get_next_block_directory(db,disk);
+			}
+		}
+	}
+	free(db);
+	return -2;
+}
+
+int SimpleFS_already_exists_remove(DiskDriver* disk, FirstDirectoryBlock* fdb, char* elem_name, DirectoryBlock* db_save, int* idx){
+	if(disk == NULL || fdb == NULL || elem_name == NULL){
+		fprintf(stderr, "Error in SImpleFS_already_exists_file: bad paremeters.\n");
+		return -1;
+	}
+	
+	//R. Estraggo il primo DirectoryBlock
+	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(db == NULL){
+		fprintf(stderr,"Error in SimpleFS_already_exists: malloc on db.\n");
+		return -1;
+	}
+	
+	if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
+		fprintf(stderr,"Error in SimpleFS_already_exists: could not read directory block one.\n");
+		free(db);
+		return -1;
+	}
+	
+	FirstFileBlock ffb_to_check;
+	int i,res, pos_in_disk, elem_pos, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+
+	
+	//A. Controlliamo prima che la directory che sto creando non esista già
+	if(fdb->num_entries > 0){	
+		for(i=0; i<dim; i++){
+			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
+				if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){ 						
+					//esiste già un elemento con lo stesso nome presente sul disco
+					elem_pos = db->file_blocks[i];
+					memcpy(db_save, db, sizeof(DirectoryBlock));
+					*idx = i;
+					free(db);
+					return elem_pos;
+				}
+			}
+		}
+
+		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
+		if(fdb->num_entries > i){
+			db = get_next_block_directory(db,disk);
+			
+			while(db != NULL){
+				pos_in_disk = get_position_disk_directory_block(db,disk);
+				
+				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
+				if(res == -1){
+					fprintf(stderr, "Errore in SimpleFS_already_exists: could not DiskDriver_readBlock.\n");
+					free(db);
+					return -1;
+				}
+				
+				for(i=0; i<dim; i++){
+					if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i], sizeof(FirstFileBlock)) != -1){
+						if(strcmp(ffb_to_check.fcb.name,elem_name) == 0){
+							//esiste già un elemento con lo stesso nome presente sul disco
+							elem_pos = db->file_blocks[i];
+							memcpy(db_save, db, sizeof(DirectoryBlock));
+							*idx = i;
 							free(db);
 							return elem_pos;
 						}
