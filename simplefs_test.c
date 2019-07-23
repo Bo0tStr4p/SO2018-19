@@ -13,13 +13,20 @@
 //Funzione per leggere la directory corrente
 int readDirectory(DirectoryHandle* current_dir){
 	int i;
-	int* flag = (int*)malloc(current_dir->dcb->num_entries * sizeof(int));
+	//printf("current_dir->dcb->num_entries:%d\n",current_dir->dcb->num_entries);
+	int* flag = (int*)malloc((current_dir->dcb->num_entries+1) * sizeof(int));
+	for (i = 0; i < current_dir->dcb->num_entries+1; i++) {
+		flag[i] = -1;
+	}
 	if(flag == NULL){
 		fprintf(stderr,"%sError: malloc of flag.\n%s",KRED,KNRM);
 		return -1;
 	}
 	
-	char** contents = (char**)malloc(current_dir->dcb->num_entries * sizeof(char*));    
+	char** contents = (char**)malloc((current_dir->dcb->num_entries+1) * sizeof(char*));
+	for (i = 0; i < current_dir->dcb->num_entries+1; i++) {
+		contents[i] = strndup("",128);
+	}
 	if(contents == NULL){
 		fprintf(stderr,"%sError: malloc of contents.\n%s",KRED,KNRM);
 		return -1;
@@ -34,15 +41,16 @@ int readDirectory(DirectoryHandle* current_dir){
 	
 	printf("content of %s\n\n",current_dir->dcb->fcb.name);
 
-    for (i = 0; i < current_dir->dcb->num_entries; i++) {
+    for (i = 0; i < current_dir->dcb->num_entries+1; i++) {
 		//IsDir
-		if(flag[i]){
+		//printf("flag[i]:%d\n", flag[i]);
+		if(flag[i] == 1){
 			printf("%s%s%s ",KYEL,contents[i],KNRM);
 		}
 		//IsFile
-		else{
+		else if (flag[i] == 0){
 			printf("%s%s%s ",KGRN,contents[i],KNRM);
-		} 
+		}
         free(contents[i]); 
 	} 
     free(contents);
