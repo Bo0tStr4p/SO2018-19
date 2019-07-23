@@ -374,7 +374,7 @@ int main(int agc, char** argv) {
 	if (SimpleFS_seek(file1, 512) != -1) {
 		fprintf(stderr,"%sOK.\n%s",KRED,KNRM);
 	} 
-    printf("%sError: seek doesn't work.\n%s", KRED,KNRM);
+    printf("%sError: seek doesn't work.\n%s", KGRN,KNRM);
 	
 	printf("\n-----------------------------------------------------\n\n");
 	
@@ -391,14 +391,14 @@ int main(int agc, char** argv) {
 	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
 	
 	//Leggo il contenuto della directory home
-	printf("Reading directory home. (Expected: Error)\n");
+	printf("Reading directory home. (Expected: Error)...\n");
 	if(readDirectory(current_dir) != -1){
-		fprintf(stderr,"%s OK%s\n",KGRN,KNRM);
+		fprintf(stderr,"%s OK%s\n",KRED,KNRM);
 		free(simple_fs);
         free(disk);
 		return -1;
 	}
-	printf("%sError: could not read current dir.\n%s",KRED,KNRM);
+	printf("%sError: could not read current dir.\n%s",KGRN,KNRM);
 	
 	printf("\n-----------------------------------------------------\n\n");
 	

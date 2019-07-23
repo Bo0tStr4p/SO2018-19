@@ -877,39 +877,47 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 	FirstDirectoryBlock* fdb = d->dcb;
 	DiskDriver* disk = d->sfs->disk;
 	
-	DirectoryBlock* db_update = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
-	if(db_update == NULL){
-		fprintf(stderr, "Error: malloc on db_update.\n");
+	//A. Controllo se la directory è vuota. Se lo è inutile continuare, non c'è nulla da rimuovere
+	if(fdb->num_entries < 1){
+		fprintf(stderr,"Error in SimpleFS_remove: empty directory.\n");
 		return -1;
 	}
 	
+	DirectoryBlock* db_update = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(db_update == NULL){
+		fprintf(stderr, "Error in SimpleFS_remove: malloc on db_update.\n");
+		return -1;
+	}
+	
+	//A. La directory non è vuota. Cerco il file nei blocchi directory
 	int exist_pos = SimpleFS_already_exists_remove(disk, fdb, filename, db_update, &idx);
 	if(exist_pos == -1 || exist_pos == -2){
-		fprintf(stderr,"Error: file or directory named %s doesn't exist.\n",filename);
+		fprintf(stderr,"Error in SimpleFS_remove: file or directory named %s doesn't exist.\n",filename);
 		free(db_update);
 		return -1;
 	}
 	
 	FirstFileBlock* ffb = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
 	if(ffb == NULL){
-		fprintf(stderr,"Error: malloc on ffb");
+		fprintf(stderr,"Error in SimpleFS_remove: malloc on ffb");
 		free(db_update);
 		return -1;
 	}
 	
 	if(DiskDriver_readBlock(disk, ffb, exist_pos, sizeof(FirstFileBlock)) == -1){
-		fprintf(stderr,"Error: read on ffb");
+		fprintf(stderr,"Error in SimpleFS_remove: read on ffb");
 		free(db_update);
 		free(ffb);
 		return -1;
 	}
 	
+	//A. Verifico se sto rimuovendo un file o una cartella e mi regolo di conseguenza
 	//R. Caso in cui dobbiamo rimuovere un file
 	if(ffb->fcb.is_dir == 0){
 		//R. Estraggo il primo file block
 		FileBlock* fb = (FileBlock*)malloc(sizeof(FileBlock));
 		if(fb == NULL){
-			fprintf(stderr,"Error: malloc on fb.\n");
+			fprintf(stderr,"Error in SimpleFS_remove: malloc on fb.\n");
 			free(ffb);
 			free(db_update);
 			return -1;
@@ -918,7 +926,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		FileBlock* next_fb = fb;
 		
 		if(DiskDriver_readBlock(disk, fb, ffb->index.blocks[0], sizeof(FileBlock)) == -1){
-			fprintf(stderr,"Error: read on ffb");
+			fprintf(stderr,"Error in SimpleFS_remove: read on ffb");
 			free(db_update);
 			free(ffb);
 			free(fb);
@@ -927,7 +935,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		
 		while(next_fb != NULL){
 			if(DiskDriver_freeBlock(disk, get_position_disk_file_block(fb, disk)) == -1){
-				fprintf(stderr,"Error: free_block.\n");
+				fprintf(stderr,"Error in SimpleFS_remove: free_block.\n");
 				free(db_update);
 				free(ffb);
 				free(fb);
@@ -938,7 +946,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		}
 		
 		if(DiskDriver_freeBlock(disk, exist_pos) == -1){
-				fprintf(stderr,"Error: free_block.\n");
+				fprintf(stderr,"Error in SimpleFS_remove: free_block.\n");
 				free(ffb);
 				free(db_update);
 				if(fb!=NULL)
@@ -948,24 +956,26 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		free(ffb);
 		
 		db_update->file_blocks[idx] = 0;
-		fdb->num_entries -= 1;
+		fdb->num_entries -= 1;											//A. Aggiorno il numero di elementi all'interno della directory
 		//printf("fdb->num_entries:%d\n",fdb->num_entries);
 		
+		//A. Aggiorno il DirectoryBlock da cui ho tolto il file
 		if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){
-			fprintf(stderr, "Error on update db_update.\n");
+			fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 			free(db_update);
 			return -1;
 		}
 		
+		//A. Aggiorno il FirstDirectoryBlock da cui ho tolto il file
 		if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
-			fprintf(stderr, "Error on update db_update.\n");
+			fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 			free(db_update);
 			return -1;
 		}
 		
 		free(db_update);
 		
-		d->dcb = fdb;
+		d->dcb = fdb;												//A. Ripristino la directory che precedentemente ho scorso
 		//printf("d->dcb->num_entries:%d\n",d->dcb->num_entries);
 		
 		return 0;
@@ -975,23 +985,23 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 	else{
 		FirstDirectoryBlock* fdb_to_remove = (FirstDirectoryBlock*)malloc(sizeof(FirstDirectoryBlock));
 		if(fdb_to_remove == NULL){
-			fprintf(stderr, "Error: malloc on fdb_to_remove.\n");
+			fprintf(stderr, "Error in SimpleFS_remove: malloc on fdb_to_remove.\n");
 			free(ffb);
 			free(db_update);
 		}
 		
 		if(DiskDriver_readBlock(disk, fdb_to_remove, exist_pos, sizeof(FirstDirectoryBlock)) == -1){
-			fprintf(stderr, "Error: read of fdb.\n");
+			fprintf(stderr, "Error in SimpleFS_remove: read of fdb.\n");
 			free(db_update);
 			free(ffb);
 			free(fdb_to_remove);
 			return -1;
 		}
-		
+		//A. La directory contiene elementi al suo interno
 		if(fdb_to_remove->num_entries > 0){
 			
 			if(SimpleFS_changeDir(d, fdb_to_remove->fcb.name) == -1){
-				fprintf(stderr, "Error: change dir of fdb_to_remove.\n");
+				fprintf(stderr, "Error in SimpleFS_remove: change dir of fdb_to_remove.\n");
 				free(db_update);
 				free(fdb_to_remove);
 				free(ffb);
@@ -1000,7 +1010,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			//R. Estraggo il primo directory block
 			DirectoryBlock* dir_up = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
 			if(dir_up == NULL){
-				fprintf(stderr,"Error: malloc on dir_up");
+				fprintf(stderr,"Error in SimpleFS_remove: malloc on dir_up");
 				free(db_update);
 				free(ffb);
 				free(fdb_to_remove);
@@ -1008,18 +1018,18 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			}
 			
 			if(DiskDriver_readBlock(disk, dir_up, fdb_to_remove->index.blocks[0], sizeof(DirectoryBlock)) == -1){
-				fprintf(stderr, "Error: read of directory block one.\n");
+				fprintf(stderr, "Error in SimpleFS_remove: read of directory block one.\n");
 				free(db_update);
 				free(ffb);
 				free(fdb_to_remove);
 				free(dir_up);
 				return -1;
 			}
-			
+			//A. ricorsivamente elimino tutti i file
 			while(dir_up != NULL){
 				for(i=0; i<((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int)); i++){
 					if(DiskDriver_readBlock(disk, ffb, dir_up->file_blocks[i], sizeof(FirstFileBlock)) == -1){
-						fprintf(stderr, "Error: read block FirstFileBlock.\n");
+						fprintf(stderr, "Error in SimpleFS_remove: read block FirstFileBlock.\n");
 						free(db_update);
 						free(ffb);
 						free(fdb_to_remove);
@@ -1031,7 +1041,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			}
 			
 			if(DiskDriver_freeBlock(disk, exist_pos) == -1){
-				fprintf(stderr, "Error: free block of fdb.\n");
+				fprintf(stderr, "Error in SimpleFS_remove: free block of fdb.\n");
 				free(db_update);
 				free(ffb);
 				free(fdb_to_remove);
@@ -1044,7 +1054,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			d->dcb = fdb;
 			
 			if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
-				fprintf(stderr, "Error on update db_update.\n");
+				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 				return -1;
 			}
 			
@@ -1057,19 +1067,20 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			return 0;
 			
 		}
+		//A. La directory che sto eliminando non contiene nulla al suo interno
 		else{
 			if(DiskDriver_freeBlock(disk, exist_pos) == -1){
-				fprintf(stderr, "Error: free block of fdb.\n");
+				fprintf(stderr, "Error in SimpleFS_remove: free block of fdb.\n");
 				free(db_update);
 				free(ffb);
 				return -1;
 			}
 			
-			fdb->num_entries -= 1;
-			d->dcb = fdb;
+			fdb->num_entries -= 1;				//A. Aggiorno il numero di elementi all'interno della directory
+			d->dcb = fdb; 						//A. ripristino la directory che precedentemente ho scorso
 			
 			if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
-				fprintf(stderr, "Error on update db_update.\n");
+				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 				return -1;
 			}
 			
