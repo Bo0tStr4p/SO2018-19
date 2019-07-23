@@ -14,8 +14,8 @@
 int readDirectory(DirectoryHandle* current_dir){
 	int i;
 	//printf("current_dir->dcb->num_entries:%d\n",current_dir->dcb->num_entries);
-	int* flag = (int*)malloc((current_dir->dcb->num_entries+1) * sizeof(int));
-	for (i = 0; i < current_dir->dcb->num_entries+1; i++) {
+	int* flag = (int*)malloc(/*(current_dir->dcb->num_entries+1)*/20 * sizeof(int));
+	for (i = 0; i < /*current_dir->dcb->num_entries+1*/20; i++) {
 		flag[i] = -1;
 	}
 	if(flag == NULL){
@@ -23,8 +23,8 @@ int readDirectory(DirectoryHandle* current_dir){
 		return -1;
 	}
 	
-	char** contents = (char**)malloc((current_dir->dcb->num_entries+1) * sizeof(char*));
-	for (i = 0; i < current_dir->dcb->num_entries+1; i++) {
+	char** contents = (char**)malloc(/*(current_dir->dcb->num_entries+1)*/20 * sizeof(char*));
+	for (i = 0; i < 20/*current_dir->dcb->num_entries+1*/; i++) {
 		contents[i] = strndup("",128);
 	}
 	if(contents == NULL){
@@ -41,7 +41,7 @@ int readDirectory(DirectoryHandle* current_dir){
 	
 	printf("content of %s\n\n",current_dir->dcb->fcb.name);
 
-    for (i = 0; i < current_dir->dcb->num_entries+1; i++) {
+    for (i = 0; i < 20/*current_dir->dcb->num_entries+1*/; i++) {
 		//IsDir
 		//printf("flag[i]:%d\n", flag[i]);
 		if(flag[i] == 1){
@@ -49,7 +49,9 @@ int readDirectory(DirectoryHandle* current_dir){
 		}
 		//IsFile
 		else if (flag[i] == 0){
-			printf("%s%s%s ",KGRN,contents[i],KNRM);
+			if(contents[i] != NULL){
+				printf("%s%s%s ",KGRN,contents[i],KNRM);
+			}
 		}
         free(contents[i]); 
 	} 
@@ -422,7 +424,6 @@ int main(int agc, char** argv) {
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
 
-	
 	printf("Removing file mare.txt (Expected: Ok)... ");
 	if (SimpleFS_remove(current_dir, "mare.txt") == -1) {
 		fprintf(stderr,"%sError: could not remove mare.txt.\n%s",KRED,KNRM);
@@ -438,6 +439,138 @@ int main(int agc, char** argv) {
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
 	
+	printf("Removing file casa.txt (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "casa.txt") == -1) {
+		fprintf(stderr,"%sError: could not remove casa.txt.\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Removing directory home (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "home") == -1) {
+		fprintf(stderr,"%sError: could not remove home\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of directory games (Expected: Ok)... ");
+	if(SimpleFS_mkDir(current_dir, "games") == -1){
+        fprintf(stderr,"%sError: could not create directory games.\n%s",KRED,KNRM);
+        return -1;
+    }
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Change directory, we move in games (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "games") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s", current_dir->dcb->fcb.name);
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of marte.txt (Expected: OK)... ");
+	FileHandle* file6 = SimpleFS_createFile(current_dir,"marte.txt");
+	if(file6 == NULL){
+		fprintf(stderr,"Error: Could not create file marte.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of moto.txt (Expected: OK)... ");
+	FileHandle* file7 = SimpleFS_createFile(current_dir,"moto.txt");
+	if(file7 == NULL){
+		fprintf(stderr,"Error: Could not create file moto.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Change directory, we go back in / (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "..") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Removing directory games (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "games") == -1) {
+		fprintf(stderr,"%sError: could not remove games\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
 	
 	// Chiudo tutto
 	
@@ -452,6 +585,10 @@ int main(int agc, char** argv) {
 		SimpleFS_close_file(file4);
 	if(file5 != NULL)
 		SimpleFS_close_file(file5);
+	if(file6 != NULL)
+		SimpleFS_close_file(file6);
+	if(file7 != NULL)
+		SimpleFS_close_file(file7);
 	if(current_dir != NULL)
 		SimpleFS_close_directory(current_dir);
 	

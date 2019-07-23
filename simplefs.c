@@ -1327,9 +1327,9 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			d->dcb = fdb;
 			return 0;
 		}
-	}
+	}*/
 	return 0;
-	*/
+	
 }
 
 //==================================================================//
