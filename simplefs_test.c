@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+
 
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
@@ -14,8 +16,8 @@
 int readDirectory(DirectoryHandle* current_dir){
 	int i;
 	//printf("current_dir->dcb->num_entries:%d\n",current_dir->dcb->num_entries);
-	int* flag = (int*)malloc(/*(current_dir->dcb->num_entries+1)*/20 * sizeof(int));
-	for (i = 0; i < /*current_dir->dcb->num_entries+1*/20; i++) {
+	int* flag = (int*)malloc(/*(current_dir->dcb->num_entries+1)*/BLOCK_SIZE * sizeof(int));
+	for (i = 0; i < /*current_dir->dcb->num_entries+1*/BLOCK_SIZE; i++) {
 		flag[i] = -1;
 	}
 	if(flag == NULL){
@@ -23,8 +25,8 @@ int readDirectory(DirectoryHandle* current_dir){
 		return -1;
 	}
 	
-	char** contents = (char**)malloc(/*(current_dir->dcb->num_entries+1)*/20 * sizeof(char*));
-	for (i = 0; i < 20/*current_dir->dcb->num_entries+1*/; i++) {
+	char** contents = (char**)malloc(/*(current_dir->dcb->num_entries+1)*/BLOCK_SIZE * sizeof(char*));
+	for (i = 0; i < BLOCK_SIZE/*current_dir->dcb->num_entries+1*/; i++) {
 		contents[i] = strndup("",128);
 	}
 	if(contents == NULL){
@@ -41,7 +43,7 @@ int readDirectory(DirectoryHandle* current_dir){
 	
 	printf("content of %s\n\n",current_dir->dcb->fcb.name);
 
-    for (i = 0; i < 20/*current_dir->dcb->num_entries+1*/; i++) {
+    for (i = 0; i < BLOCK_SIZE/*current_dir->dcb->num_entries+1*/; i++) {
 		//IsDir
 		//printf("flag[i]:%d\n", flag[i]);
 		if(flag[i] == 1){
@@ -516,7 +518,7 @@ int main(int agc, char** argv) {
 	}
 	
 	printf("\n\n-----------------------------------------------------\n\n");
-	
+	/*
 	printf("Creation of moto.txt (Expected: OK)... ");
 	FileHandle* file7 = SimpleFS_createFile(current_dir,"moto.txt");
 	if(file7 == NULL){
@@ -532,7 +534,7 @@ int main(int agc, char** argv) {
 		free(simple_fs);
         free(disk);
 		return -1;
-	}
+	}*/
 	
 	printf("\n\n-----------------------------------------------------\n\n");
 	
@@ -587,8 +589,12 @@ int main(int agc, char** argv) {
 		SimpleFS_close_file(file5);
 	if(file6 != NULL)
 		SimpleFS_close_file(file6);
-	if(file7 != NULL)
-		SimpleFS_close_file(file7);
+	/*if(file7 != NULL)
+		SimpleFS_close_file(file7);*/
+	printf("%s\n",current_dir->parent_dir->fcb.name);
+	printf("%s\n",current_dir->dcb->fcb.name);
+	assert(current_dir->parent_dir == NULL);
+		
 	if(current_dir != NULL)
 		SimpleFS_close_directory(current_dir);
 	

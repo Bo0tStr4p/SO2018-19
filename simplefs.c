@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 
 // initializes a file system on an already made disk
@@ -388,7 +389,8 @@ int SimpleFS_close_file(FileHandle* f){
 }
 
 int SimpleFS_close_directory(DirectoryHandle* f){
-	free(f->dcb);
+	if(f->dcb != NULL)
+		free(f->dcb);
 	if(f->parent_dir != NULL)
 		free(f->parent_dir);
 	free(f);
@@ -670,6 +672,8 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		//A. Se -1, mi sto spostando nella root
 		if(parent_block == -1){
 			d->parent_dir = NULL;
+			assert(d->parent_dir == NULL);
+			printf("SONO QUI");
 			return 0;
 		}
 		
@@ -680,7 +684,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		if(res == -1){
 			fprintf(stderr, "Error in SimpleFS_changeDir: could not read parent directory.\n");
 			d->parent_dir = NULL;
-			return -1; 
+			return 0; 
 		}
 		else{
 			d->parent_dir = parent_directory;
@@ -865,7 +869,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 // removes the file in the current directory
 // returns -1 on failure 0 on success
 // if a directory, it removes recursively all contained files
-//R. DA RIVEDERE PERCHE' CAMBIATO QUALCOSA
+
 int SimpleFS_remove(DirectoryHandle* d, char* filename){	
 	if(d == NULL || filename == NULL){
 		fprintf(stderr,"Error: could not use SimpleFS_remove. Bad parameters.\n");
@@ -923,8 +927,6 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			return -1;
 		}
 		
-		FileBlock* next_fb = fb;
-		
 		if(DiskDriver_readBlock(disk, fb, ffb->index.blocks[0], sizeof(FileBlock)) == -1){
 			fprintf(stderr,"Error in SimpleFS_remove: read on ffb");
 			free(db_update);
@@ -933,16 +935,14 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			return -1;
 		}
 		
-		while(next_fb != NULL){
+		while(fb != NULL){
 			if(DiskDriver_freeBlock(disk, get_position_disk_file_block(fb, disk)) == -1){
 				fprintf(stderr,"Error in SimpleFS_remove: free_block.\n");
 				free(db_update);
 				free(ffb);
 				free(fb);
 			}
-			next_fb = get_next_block_file(fb, disk);
-			//free(fb);
-			fb = next_fb;
+			fb = get_next_block_file(fb, disk);
 		}
 		
 		if(DiskDriver_freeBlock(disk, exist_pos) == -1){
@@ -977,7 +977,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		
 		d->dcb = fdb;												//A. Ripristino la directory che precedentemente ho scorso
 		//printf("d->dcb->num_entries:%d\n",d->dcb->num_entries);
-		
+		printf("\nOk\n");
 		return 0;
 		
 	}
@@ -1028,16 +1028,20 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			//A. ricorsivamente elimino tutti i file
 			while(dir_up != NULL){
 				for(i=0; i<((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int)); i++){
-					if(DiskDriver_readBlock(disk, ffb, dir_up->file_blocks[i], sizeof(FirstFileBlock)) == -1){
-						fprintf(stderr, "Error in SimpleFS_remove: read block FirstFileBlock.\n");
-						free(db_update);
-						free(ffb);
-						free(fdb_to_remove);
-						free(dir_up);
-						return -1;
+					if(dir_up->file_blocks[i] != 0){
+						if(DiskDriver_readBlock(disk, ffb, dir_up->file_blocks[i], sizeof(FirstFileBlock)) == -1){
+							fprintf(stderr, "Error in SimpleFS_remove: read block FirstFileBlock.\n");
+							free(db_update);
+							free(ffb);
+							free(fdb_to_remove);
+							free(dir_up);
+							return -1;
+						}
+						printf("\nElimino: %s\n",ffb->fcb.name);
+						SimpleFS_remove(d, ffb->fcb.name);
 					}
-					SimpleFS_remove(d, ffb->fcb.name);
 				}
+				dir_up = get_next_block_directory(dir_up, disk);
 			}
 			
 			if(DiskDriver_freeBlock(disk, exist_pos) == -1){
@@ -1052,9 +1056,25 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			
 			fdb->num_entries -= 1;
 			d->dcb = fdb;
+			db_update->file_blocks[idx] = 0;
+			
+			if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){
+				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
+				free(db_update);
+				free(ffb);
+				free(fdb_to_remove);
+				if(dir_up != NULL)
+					free(dir_up);
+				return -1;
+			}
 			
 			if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
 				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
+				free(db_update);
+				free(ffb);
+				free(fdb_to_remove);
+				if(dir_up != NULL)
+					free(dir_up);
 				return -1;
 			}
 			
@@ -1073,14 +1093,27 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 				fprintf(stderr, "Error in SimpleFS_remove: free block of fdb.\n");
 				free(db_update);
 				free(ffb);
+				free(fdb_to_remove);
 				return -1;
 			}
 			
 			fdb->num_entries -= 1;				//A. Aggiorno il numero di elementi all'interno della directory
 			d->dcb = fdb; 						//A. ripristino la directory che precedentemente ho scorso
+			db_update->file_blocks[idx] = 0;
+			
+			if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){
+				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
+				free(db_update);
+				free(ffb);
+				free(fdb_to_remove);
+				return -1;
+			}
 			
 			if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
 				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
+				free(db_update);
+				free(ffb);
+				free(fdb_to_remove);
 				return -1;
 			}
 			
