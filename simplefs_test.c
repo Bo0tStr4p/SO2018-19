@@ -14,23 +14,24 @@
 //Funzione per leggere la directory corrente
 int readDirectory(DirectoryHandle* current_dir){
 	int i;
-	//printf("current_dir->dcb->num_entries:%d\n",current_dir->dcb->num_entries);
-	int* flag = (int*)malloc(/*(current_dir->dcb->num_entries+1)*/BLOCK_SIZE * sizeof(int));
-	for (i = 0; i < /*current_dir->dcb->num_entries+1*/BLOCK_SIZE; i++) {
+	
+	int* flag = (int*)malloc((current_dir->dcb->num_entries) * sizeof(int));
+	for (i = 0; i < current_dir->dcb->num_entries; i++) {
 		flag[i] = -1;
 	}
 	if(flag == NULL){
-		fprintf(stderr,"%sError: malloc of flag.\n%s",KRED,KNRM);
+		fprintf(stderr,"%sError in readDirectory: malloc of flag.\n%s",KRED,KNRM);
 		return -1;
 	}
 	
-	char** contents = (char**)malloc(/*(current_dir->dcb->num_entries+1)*/BLOCK_SIZE * sizeof(char*));
-	for (i = 0; i < BLOCK_SIZE/*current_dir->dcb->num_entries+1*/; i++) {
-		contents[i] = strndup("",128);
-	}
+	char** contents = (char**)malloc((current_dir->dcb->num_entries) * sizeof(char*));
 	if(contents == NULL){
-		fprintf(stderr,"%sError: malloc of contents.\n%s",KRED,KNRM);
+		fprintf(stderr,"%sError in readDirectory: malloc of contents.\n%s",KRED,KNRM);
 		return -1;
+	}
+	
+	for (i = 0; i < (current_dir->dcb->num_entries); i++) {
+		contents[i] = (char*)malloc(128*sizeof(char));
 	}
 	
     if(SimpleFS_readDir(contents, flag, current_dir) == -1){
@@ -42,9 +43,8 @@ int readDirectory(DirectoryHandle* current_dir){
 	
 	printf("content of %s\n\n",current_dir->dcb->fcb.name);
 
-    for (i = 0; i < BLOCK_SIZE/*current_dir->dcb->num_entries+1*/; i++) {
+    for (i = 0; i < current_dir->dcb->num_entries; i++) {
 		//IsDir
-		//printf("flag[i]:%d\n", flag[i]);
 		if(flag[i] == 1){
 			printf("%s%s%s ",KYEL,contents[i],KNRM);
 		}
@@ -533,10 +533,25 @@ int main(int agc, char** argv) {
 		free(simple_fs);
         free(disk);
 		return -1;
-	}*/
+	}
 	
 	printf("\n\n-----------------------------------------------------\n\n");
 	
+	printf("Removing file moto.txt (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "moto.txt") == -1) {
+		fprintf(stderr,"%sError: could not remove moto.txt.\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	*/
 	printf("Change directory, we go back in / (Expected: Ok)... ");
 	
     if (SimpleFS_changeDir(current_dir, "..") == -1) {
@@ -588,8 +603,8 @@ int main(int agc, char** argv) {
 		SimpleFS_close_file(file5);
 	if(file6 != NULL)
 		SimpleFS_close_file(file6);
-	/*if(file7 != NULL)
-		SimpleFS_close_file(file7);*/
+	//if(file7 != NULL)
+		//SimpleFS_close_file(file7);
 	//printf("%s\n",current_dir->parent_dir->fcb.name);
 		
 	if(current_dir != NULL)

@@ -240,7 +240,7 @@ int SimpleFS_readDir(char** names,int* flag, DirectoryHandle* d){
 		return -1;
 	}
 	
-	int i, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
+	int i, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int), num_tot = 0;
 	FirstFileBlock ffb_to_check; 
 	
 	//R. Estraggo il primo DirectoryBlock
@@ -259,9 +259,9 @@ int SimpleFS_readDir(char** names,int* flag, DirectoryHandle* d){
 	//A. Iniziamo a leggere i file contenuti nel blocco directory in cui ci troviamo, cioè d->current_block
 	for (i=0; i<dim; i++){	
 		if (db->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &ffb_to_check, db->file_blocks[i], sizeof(FirstFileBlock)) != -1){ 
-			names[i] = strndup(ffb_to_check.fcb.name, 128); 	//A. Salvo il nome del file che sto leggendo nell'array names
-			flag[i] = ffb_to_check.fcb.is_dir;							//R. Salvo se è file o directory
-            //printf("i: %d - isDir:%d\n", i,ffb_to_check.fcb.is_dir);
+			strncpy(names[num_tot],ffb_to_check.fcb.name, 128); 				//A. Salvo il nome del file che sto leggendo nell'array names
+			flag[num_tot] = ffb_to_check.fcb.is_dir;							//R. Salvo se è file o directory
+			num_tot++;
 		}
 		//dim_names++;
 	}
@@ -275,8 +275,9 @@ int SimpleFS_readDir(char** names,int* flag, DirectoryHandle* d){
 
 			for (i=0; i<dim; i++){	 
 				if (db->file_blocks[i]> 0 && DiskDriver_readBlock(disk, &ffb_to_check, db->file_blocks[i], sizeof(FirstFileBlock)) != -1){ 
-					names[i] = strndup(ffb_to_check.fcb.name, 128); 											//A. Salvo il nome del file che sto leggendo nell'array names
-					flag[i] = ffb_to_check.fcb.is_dir;					//R. Salvo se è file o directory
+					strncpy(names[num_tot],ffb_to_check.fcb.name, 128); 				//A. Salvo il nome del file che sto leggendo nell'array names
+					flag[num_tot] = ffb_to_check.fcb.is_dir;							//R. Salvo se è file o directory
+					num_tot++;
 				}
 				//dim_names++;
 			}
