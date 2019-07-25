@@ -236,7 +236,7 @@ int SimpleFS_readDir(char** names,int* flag, DirectoryHandle* d){
 	
 	//A. Se la directory è vuota, inutile procedere
 	if(fdb->num_entries <= 0){
-		fprintf(stderr, "Error in SimpleFS_readDir: empty directory.\n");
+		//fprintf(stderr, "Error in SimpleFS_readDir: empty directory.\n");
 		return -1;
 	}
 	
@@ -373,7 +373,7 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
 
 	//R. Caso in cui la directory è vuota
 	} else { 
-		fprintf(stderr,"Error in SimpleFS_openFIle: could not open file, directory is empty.\n");
+		fprintf(stderr,"Error in SimpleFS_openFile: could not open file, directory is empty.\n");
 		return NULL;
 	}
     return NULL;

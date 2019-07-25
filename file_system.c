@@ -88,18 +88,96 @@ void FileSystem_mkdir(int arguments_number,char* arguments[MAX_ARGUMENTS]){
 }
 
 void FileSystem_write(int arguments_number,char* arguments[MAX_ARGUMENTS]){
-	//ALESSANDRO
+	 if(arguments_number != 2) {
+        fprintf(stderr, "%sUsage FileSystem_write: file %s.\n%s", KRED, arguments[1], KNRM);
+        return;
+    }
+    
+    FileHandle* file_h = SimpleFS_openFile(current_dir, arguments[1]);
+    if (file_h == NULL) {
+        fprintf(stderr, "%sError in FileSystem_write: could not open file %s.\n%s", KRED, arguments[1], KNRM);
+        return;
+    }
+    
+    int start;
+    printf("Enter starting point: ");
+    scanf("%d", &start); 
+    getchar();
+    
+    if (SimpleFS_seek(file_h,start) == -1) {
+		fprintf(stderr, "%sError in FileSystem_write: could not seeking in file %s.\n%s", KRED, arguments[1], KNRM);
+        SimpleFS_close_file(file_h);
+        return;
+    }
+    
+    printf("Enter text: \n");
+    char* text = (char*) malloc(BLOCK_SIZE * sizeof(char));
+    if(text == NULL){
+		fprintf(stderr, "%sError in FileSystem_write: malloc on text.\n%s\n", KRED, KNRM);
+		SimpleFS_close_file(file_h);
+		return;
+	}
+    
+    fgets(text, BLOCK_SIZE, stdin);
+    text[strlen(text) - 1] = 0x00;
+    
+    if (SimpleFS_write(file_h, text, strlen(text)) == -1) {
+        fprintf(stderr, "%sError in FileSystem_write: could not writing in file %s.\n%s", KRED, arguments[1], KNRM);
+        free(text);
+        SimpleFS_close_file(file_h);
+        return;
+    }
+
+    free(text);
+    SimpleFS_close_file(file_h);
+    
 	return;
 }
 
 void FileSystem_more(int arguments_number, char* arguments[MAX_ARGUMENTS]){
-	//ALESSANDRO
+	if (arguments_number != 2) {
+        fprintf(stderr, "%sUsage FileSystem_more: file %s.\n%s", KRED, arguments[1], KNRM);
+        return;
+    }
+    FileHandle* file_h = SimpleFS_openFile(current_dir, arguments[1]);
+    if (file_h == NULL) {
+        fprintf(stderr, "%sError in FileSystem_more: could not open file %s.\n%s", KRED, arguments[1], KNRM);
+        return;
+    }
+
+    int file_size = file_h->fcb->fcb.size_in_bytes;
+    char* text = (char*) malloc((file_size+1)*sizeof(char));
+     if(text == NULL){
+		fprintf(stderr, "%sError in FileSystem_more: malloc on text.\n%s\n", KRED, KNRM);
+		SimpleFS_close_file(file_h);
+		return;
+	}
+    
+    
+    if (SimpleFS_read(file_h, text, file_size) == -1) {
+        fprintf(stderr, "%sError in FileSystem_more: could not read file %s.\n%s", KRED, arguments[1], KNRM);
+        free(text);
+        SimpleFS_close_file(file_h);
+        return;
+    }
+
+    printf("%s\n", text);
+
+    free(text);
+    SimpleFS_close_file(file_h);
+	
 	return;
 }
 
 void FileSystem_touch(int arguments_number, char* arguments[MAX_ARGUMENTS]){
-	//ALESSANDRO
-	return;
+	 if (arguments_number != 2) {
+		fprintf(stderr, "%sUsage FileSystem_touch: file %s.\n%s", KRED, arguments[1], KNRM);
+        return;
+    }
+   
+    if (SimpleFS_createFile(current_dir, arguments[1]) == NULL) 
+		fprintf(stderr, "%sError in FileSystem_touch: could not create file %s.\n%s", KRED, arguments[1], KNRM);
+	
 }
 
 void FileSystem_cd(int arguments_number, char* arguments[MAX_ARGUMENTS]){
@@ -167,8 +245,14 @@ void FileSystem_ls(void){
 }
 
 void FileSystem_rm(int arguments_number, char* arguments[MAX_ARGUMENTS]){
-	//ALESSANDRO
-	return;
+	if (arguments_number != 2) {
+        fprintf(stderr, "%sUsage FileSystem_rm: %s.\n%s", KRED, arguments[1], KNRM);
+        return;
+    }
+
+    if (SimpleFS_remove(current_dir, arguments[1]) == -1) 
+        fprintf(stderr, "%sError in FileSystem_rm: could not remove %s.\n%s", KRED, arguments[1], KNRM);
+	
 }
 
 void FileSystem_help(void){
