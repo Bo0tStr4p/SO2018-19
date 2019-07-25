@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 
 // initializes a file system on an already made disk
@@ -672,8 +671,6 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		//A. Se -1, mi sto spostando nella root
 		if(parent_block == -1){
 			d->parent_dir = NULL;
-			assert(d->parent_dir == NULL);
-			printf("SONO QUI");
 			return 0;
 		}
 		
@@ -977,7 +974,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		
 		d->dcb = fdb;												//A. Ripristino la directory che precedentemente ho scorso
 		//printf("d->dcb->num_entries:%d\n",d->dcb->num_entries);
-		printf("\nOk\n");
+		//printf("\nOk\n");
 		return 0;
 		
 	}
@@ -1037,11 +1034,18 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 							free(dir_up);
 							return -1;
 						}
-						printf("\nElimino: %s\n",ffb->fcb.name);
+						//printf("\nElimino: %s\n",ffb->fcb.name);
 						SimpleFS_remove(d, ffb->fcb.name);
 					}
 				}
 				dir_up = get_next_block_directory(dir_up, disk);
+			}
+			
+			if(SimpleFS_changeDir(d, "..") == -1){
+				fprintf(stderr, "Error in SimpleFS_remove: change dir of fdb_to_remove.\n");
+				free(db_update);
+				free(fdb_to_remove);
+				free(ffb);
 			}
 			
 			if(DiskDriver_freeBlock(disk, exist_pos) == -1){
@@ -1055,7 +1059,9 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			}
 			
 			fdb->num_entries -= 1;
-			d->dcb = fdb;
+			
+			//d->dcb = fdb;
+			
 			db_update->file_blocks[idx] = 0;
 			
 			if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){

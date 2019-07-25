@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 
 #define KNRM  "\x1B[0m"
@@ -591,9 +590,7 @@ int main(int agc, char** argv) {
 		SimpleFS_close_file(file6);
 	/*if(file7 != NULL)
 		SimpleFS_close_file(file7);*/
-	printf("%s\n",current_dir->parent_dir->fcb.name);
-	printf("%s\n",current_dir->dcb->fcb.name);
-	assert(current_dir->parent_dir == NULL);
+	//printf("%s\n",current_dir->parent_dir->fcb.name);
 		
 	if(current_dir != NULL)
 		SimpleFS_close_directory(current_dir);
