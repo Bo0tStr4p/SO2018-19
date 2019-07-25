@@ -1062,7 +1062,9 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 				return -1;
 			}
 			
-			fdb->num_entries -= 1;
+			d->dcb->num_entries -=1;
+			
+			//fdb->num_entries -= 1;
 			
 			//d->dcb = fdb;
 			
@@ -1078,7 +1080,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 				return -1;
 			}
 			
-			if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
+			if(DiskDriver_updateBlock(disk, d->dcb, d->dcb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
 				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 				free(db_update);
 				free(ffb);
