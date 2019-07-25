@@ -925,7 +925,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			return -1;
 		}
 		
-		if(DiskDriver_readBlock(disk, fb, ffb->index.blocks[0], sizeof(FileBlock)) == -1){
+		if(DiskDriver_readBlock(disk, fb, ffb->index.blocks[0], sizeof(FirstFileBlock)) == -1){
 			fprintf(stderr,"Error in SimpleFS_remove: read on ffb");
 			free(db_update);
 			free(ffb);

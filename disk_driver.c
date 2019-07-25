@@ -151,7 +151,9 @@ int DiskDriver_readBlock(DiskDriver* disk, void* dest, int block_num, int bytes_
 	//R. Classica funzione di scrittura con il file descriptor
 	int ret, read_bytes = 0;
 	while(read_bytes < bytes_to_read){
-																				
+		//printf("read bytes: %d\n",read_bytes);
+		//printf("bytes_to_read: %d\n",bytes_to_read);
+		//if(read_bytes == 200 && bytes_to_read == 512) return -1;																	
 		if((ret = read(fd, dest + read_bytes, bytes_to_read - read_bytes)) == -1){
 			if(errno == EINTR) 
 				continue;

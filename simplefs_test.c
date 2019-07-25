@@ -517,11 +517,30 @@ int main(int agc, char** argv) {
 	}
 	
 	printf("\n\n-----------------------------------------------------\n\n");
-	/*
+	
 	printf("Creation of moto.txt (Expected: OK)... ");
 	FileHandle* file7 = SimpleFS_createFile(current_dir,"moto.txt");
 	if(file7 == NULL){
 		fprintf(stderr,"Error: Could not create file moto.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of orso.txt (Expected: OK)... ");
+	FileHandle* file8 = SimpleFS_createFile(current_dir,"orso.txt");
+	if(file8 == NULL){
+		fprintf(stderr,"Error: Could not create file orso.txt");
 		free(simple_fs);
 		free(disk);
 		return -1;
@@ -551,7 +570,37 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
+	/*
+	printf("Removing file marte.txt (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "marte.txt") == -1) {
+		fprintf(stderr,"%sError: could not remove marte.txt.\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
 	*/
+	printf("Removing file orso.txt (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "orso.txt") == -1) {
+		fprintf(stderr,"%sError: could not remove orso.txt.\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
 	printf("Change directory, we go back in / (Expected: Ok)... ");
 	
     if (SimpleFS_changeDir(current_dir, "..") == -1) {
@@ -573,6 +622,7 @@ int main(int agc, char** argv) {
 	printf("\n\n-----------------------------------------------------\n\n");
 	
 	printf("Removing directory games (Expected: Ok)... ");
+	
 	if (SimpleFS_remove(current_dir, "games") == -1) {
 		fprintf(stderr,"%sError: could not remove games\n%s",KRED,KNRM);
         return -1; 
@@ -587,6 +637,361 @@ int main(int agc, char** argv) {
 	}
 	
 	printf("\n\n-----------------------------------------------------\n\n");
+	printf("ULTERIORI TEST\n");
+	printf("---------------------------------------------------------\n\n");
+	
+	printf("Creation of directory images (Expected: Ok)... ");
+	if(SimpleFS_mkDir(current_dir, "images") == -1){
+        fprintf(stderr,"%sError: could not create directory images.\n%s",KRED,KNRM);
+        return -1;
+    }
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Change directory, we move in images (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "images") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s", current_dir->dcb->fcb.name);
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of roma.txt (Expected: OK)... ");
+	FileHandle* file9 = SimpleFS_createFile(current_dir,"roma.txt");
+	if(file9 == NULL){
+		fprintf(stderr,"Error: Could not create file roma.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of napoli.txt (Expected: OK)... ");
+	FileHandle* file10 = SimpleFS_createFile(current_dir,"napoli.txt");
+	if(file10 == NULL){
+		fprintf(stderr,"Error: Could not create file napoli.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of directory video (Expected: Ok)... ");
+	if(SimpleFS_mkDir(current_dir, "video") == -1){
+        fprintf(stderr,"%sError: could not create directory video.\n%s",KRED,KNRM);
+        return -1;
+    }
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of directory documents (Expected: Ok)... ");
+	if(SimpleFS_mkDir(current_dir, "documents") == -1){
+        fprintf(stderr,"%sError: could not create directory documents.\n%s",KRED,KNRM);
+        return -1;
+    }
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of torino.txt (Expected: OK)... ");
+	FileHandle* file11 = SimpleFS_createFile(current_dir,"torino.txt");
+	if(file11 == NULL){
+		fprintf(stderr,"Error: Could not create file torino.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	/*
+				204 bytes in 1 blocks are definitely lost in loss record 1 of 2
+	==13632==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+	==13632==    by 0x10CEA9: SimpleFS_init (simplefs.c:15)
+	==13632==    by 0x10A24B: main (simplefs_test.c:102)
+
+	*/
+
+	printf("Change directory, we move in documents (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "documents") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s", current_dir->dcb->fcb.name);
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of nasa.txt (Expected: OK)... ");
+	FileHandle* file12 = SimpleFS_createFile(current_dir,"nasa.txt");
+	if(file12 == NULL){
+		fprintf(stderr,"Error: Could not create file nasa.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of directory music (Expected: Ok)... ");
+	if(SimpleFS_mkDir(current_dir, "music") == -1){
+        fprintf(stderr,"%sError: could not create directory music.\n%s",KRED,KNRM);
+        return -1;
+    }
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of leone.txt (Expected: OK)... ");
+	FileHandle* file13 = SimpleFS_createFile(current_dir,"leone.txt");
+	if(file13 == NULL){
+		fprintf(stderr,"Error: Could not create file leone.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	/*
+				204 bytes in 1 blocks are definitely lost in loss record 2 of 2
+	==13632==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+	==13632==    by 0x10EA5B: SimpleFS_changeDir (simplefs.c:680)
+	==13632==    by 0x10CB09: main (simplefs_test.c:833)
+	*/
+	
+	printf("Change directory, we go back in images (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "..") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Removing directory documents (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "documents") == -1) {
+		fprintf(stderr,"%sError: could not remove documents\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Change directory, we go in video (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "video") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
+	
+	printf("Creation of directory cars (Expected: Ok)... ");
+	if(SimpleFS_mkDir(current_dir, "cars") == -1){
+        fprintf(stderr,"%sError: could not create directory cars.\n%s",KRED,KNRM);
+        return -1;
+    }
+    printf("%s OK%s\n",KGRN,KNRM);
+    
+    if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of elefante.txt (Expected: OK)... ");
+	FileHandle* file14 = SimpleFS_createFile(current_dir,"elefante.txt");
+	if(file14 == NULL){
+		fprintf(stderr,"Error: Could not create file elefante.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Creation of gatto.txt (Expected: OK)... ");
+	FileHandle* file15 = SimpleFS_createFile(current_dir,"gatto.txt");
+	if(file15 == NULL){
+		fprintf(stderr,"Error: Could not create file gatto.txt");
+		free(simple_fs);
+		free(disk);
+		return -1;
+	}
+	printf("%sOK\n\n%s",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Change directory, we go back in images (Expected: Ok)... ");
+	
+    if (SimpleFS_changeDir(current_dir, "..") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Change directory, we go back in / (Expected: Ok)... ");
+	if (SimpleFS_changeDir(current_dir, "..") == -1) {
+       fprintf(stderr, "%sError: Could not change directory.\n%s", KRED,KNRM);
+       free(simple_fs);
+       free(disk);
+       return -1; 
+    }
+    
+	printf("%s OK%s\n",KGRN,KNRM);
+	printf("Current directory: %s\n\n", current_dir->dcb->fcb.name);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
+	printf("Removing directory images (Expected: Ok)... ");
+	if (SimpleFS_remove(current_dir, "images") == -1) {
+		fprintf(stderr,"%sError: could not remove images\n%s",KRED,KNRM);
+        return -1; 
+    }
+	printf("%s OK%s\n",KGRN,KNRM);
+	
+	if(readDirectory(current_dir) == -1){
+		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
+		free(simple_fs);
+        free(disk);
+		return -1;
+	}
+	printf("\n\n-----------------------------------------------------\n\n");
+	
 	
 	// Chiudo tutto
 	
@@ -603,8 +1008,24 @@ int main(int agc, char** argv) {
 		SimpleFS_close_file(file5);
 	if(file6 != NULL)
 		SimpleFS_close_file(file6);
-	//if(file7 != NULL)
-		//SimpleFS_close_file(file7);
+	if(file7 != NULL)
+		SimpleFS_close_file(file7);
+	if(file8 != NULL)
+		SimpleFS_close_file(file8);
+	if(file9 != NULL)
+		SimpleFS_close_file(file9);
+	if(file10 != NULL)
+		SimpleFS_close_file(file10);
+	if(file11 != NULL)
+		SimpleFS_close_file(file11);
+	if(file12 != NULL)
+		SimpleFS_close_file(file12);
+	if(file13 != NULL)
+		SimpleFS_close_file(file13);
+	if(file14 != NULL)
+		SimpleFS_close_file(file14);
+	if(file15 != NULL)
+		SimpleFS_close_file(file15);
 	//printf("%s\n",current_dir->parent_dir->fcb.name);
 		
 	if(current_dir != NULL)
