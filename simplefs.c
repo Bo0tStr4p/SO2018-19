@@ -652,7 +652,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 // seeks for a directory in d. If dirname is equal to ".." it goes one level up
 // 0 on success, negative value on error
 // it does side effect on the provided handle
- int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
+int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
  	if(d == NULL || dirname == NULL){
 		fprintf(stderr,"Error in SimpleFS_changeDir: bad parameters.\n");
 		return -1;
@@ -661,7 +661,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 	//A. Confrontando il nome con ".." vedo se il comando inserito mi chiede di andare alla cartella genitore
 	if(strcmp(dirname,"..") == 0){	
 		if(d->dcb->fcb.block_in_disk == 0){ 												//A. Controllo se la directory in cui sto è la root
-			fprintf(stderr, "Error in SimpleFS_changeDir: this is the root directory.\n");
+			//fprintf(stderr, "Error in SimpleFS_changeDir: this is the root directory.\n");
 			return -1;
 		}
 		free(d->dcb);
@@ -680,8 +680,9 @@ int SimpleFS_seek(FileHandle* f, int pos){
 		FirstDirectoryBlock* parent_directory = malloc(sizeof(FirstDirectoryBlock));
 		res = DiskDriver_readBlock(d->sfs->disk, parent_directory, parent_block, sizeof(FirstDirectoryBlock));
 		if(res == -1){
-			fprintf(stderr, "Error in SimpleFS_changeDir: could not read parent directory.\n");
+			//fprintf(stderr, "Error in SimpleFS_changeDir: could not read parent directory.\n");
 			d->parent_dir = NULL;
+			//free(parent_directory);
 			return 0; 
 		}
 		else{
@@ -692,7 +693,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 	
 	//A. caso in cui la directory in cui sto dentro è vuota
 	else if(d->dcb->num_entries < 0){ 
-		fprintf(stderr, "Error in SimpleFS_changeDir: empty directory.\n");
+		//fprintf(stderr, "Error in SimpleFS_changeDir: empty directory.\n");
 		return -1;
 	}
 	else{
@@ -755,6 +756,8 @@ int SimpleFS_seek(FileHandle* f, int pos){
 					if(strncmp(dir_dest->fcb.name,dirname,128) == 0){
 						//DiskDriver_readBlock(disk,dir_dest,db->file_blocks[i],sizeof(FirstDirectoryBlock));
 						d->pos_in_block = 0;
+						if(d->parent_dir != NULL)
+							free(d->parent_dir);
 						d->parent_dir = fdb;
 						d->dcb = dir_dest;
 						free(db);
@@ -765,7 +768,7 @@ int SimpleFS_seek(FileHandle* f, int pos){
 			db = get_next_block_directory(db,disk);
 		}
 		
-		fprintf(stderr, "Errore in SimpleFS_changeDir: could not change directory.\n");
+		//fprintf(stderr, "Errore in SimpleFS_changeDir: could not change directory.\n");
 		free(db);
 		//free(dir_dest);
 		return -1;
