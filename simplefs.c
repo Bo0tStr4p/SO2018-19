@@ -770,7 +770,7 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 		
 		//fprintf(stderr, "Errore in SimpleFS_changeDir: could not change directory.\n");
 		free(db);
-		//free(dir_dest);
+		free(dir_dest);
 		return -1;
 	}
 }
