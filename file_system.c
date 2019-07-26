@@ -25,6 +25,7 @@ DirectoryHandle* FileSystem_StartUp(const char* filename, DiskDriver* disk, Simp
 		return current;
 	}
 	else{
+		SimpleFS_close_directory(current);
 		current = SimpleFS_init(simple_fs,disk);
 		return current;
 	}
@@ -147,8 +148,10 @@ void FileSystem_more(int arguments_number, char* arguments[MAX_ARGUMENTS]){
         SimpleFS_close_file(file_h);
         return;
     }
-
-    printf("%s\n", text);
+	
+	text[file_size] = '\0';
+    printf("%s \n",text);
+    
 
     free(text);
     SimpleFS_close_file(file_h);
