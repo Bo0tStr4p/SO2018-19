@@ -64,7 +64,7 @@ void my_function(int sig){
 
 void FileSystem_mkdir(int arguments_number,char* arguments[MAX_ARGUMENTS]){
 	if (arguments_number != 2) {
-        printf("Usage: mkdir directory_name\n");
+        printf("%sUsage: mkdir directory_name\n%s",KRED,KNRM);
         return;
     }
 
@@ -77,7 +77,7 @@ void FileSystem_mkdir(int arguments_number,char* arguments[MAX_ARGUMENTS]){
 
 void FileSystem_write(int arguments_number,char* arguments[MAX_ARGUMENTS]){
 	 if(arguments_number != 2) {
-        fprintf(stderr, "%sUsage FileSystem_write: file %s.\n%s", KRED, arguments[1], KNRM);
+        fprintf(stderr, "%sUsage write file_name\n%s", KRED, KNRM);
         return;
     }
     
@@ -124,7 +124,7 @@ void FileSystem_write(int arguments_number,char* arguments[MAX_ARGUMENTS]){
 
 void FileSystem_more(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 	if (arguments_number != 2) {
-        fprintf(stderr, "%sUsage FileSystem_more: file %s.\n%s", KRED, arguments[1], KNRM);
+        fprintf(stderr, "%sUsage more file_name\n%s", KRED, KNRM);
         return;
     }
     FileHandle* file_h = SimpleFS_openFile(current_dir, arguments[1]);
@@ -161,7 +161,7 @@ void FileSystem_more(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 
 void FileSystem_touch(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 	 if (arguments_number != 2) {
-		fprintf(stderr, "%sUsage FileSystem_touch: file %s.\n%s", KRED, arguments[1], KNRM);
+		fprintf(stderr, "%sUsage touch file_name\n%s", KRED, KNRM);
         return;
     }
     
@@ -175,7 +175,7 @@ void FileSystem_touch(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 
 void FileSystem_cd(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 	if (arguments_number != 2) {
-        printf("Usage: cd directory_name\n");
+        printf("%sUsage: cd directory_name\n%s",KRED,KNRM);
         return;
     }
 
@@ -239,7 +239,7 @@ void FileSystem_ls(void){
 
 void FileSystem_rm(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 	if (arguments_number != 2) {
-        fprintf(stderr, "%sUsage FileSystem_rm: %s.\n%s", KRED, arguments[1], KNRM);
+        fprintf(stderr, "%sUsage rm file_name or directory_name\n%s", KRED, KNRM);
         return;
     }
 
