@@ -12,7 +12,6 @@ DiskDriver* disk;
 DirectoryHandle* current_dir;
 
 char my_path[256] = "/";
-const char* root_path = "/";
 
 DirectoryHandle* FileSystem_StartUp(const char* filename, DiskDriver* disk, SimpleFS* simple_fs){
 	
@@ -33,30 +32,18 @@ DirectoryHandle* FileSystem_StartUp(const char* filename, DiskDriver* disk, Simp
 }
 
 void FileSystem_updatePath(const char* path){
-	int j, i = 0;
-    char *token[256];
-    
-    if(strcmp(path, "..") != 0){
+	 if(strcmp(path, "..") != 0){
+		if(strlen(my_path) != 1)
+			strcat(my_path,"/");
 		strcat(my_path, path);
-		strcat(my_path,"/");
 		return;
 	}
 	else{
-		token[0] = strtok(my_path, "/");  
-		while (token[i] != NULL) {
-			printf("\n\n%s\n\n",token[i]);
-			i++;
-			token[i] = strtok(NULL, "/"); 
-		}
-		
-		strcpy(my_path, root_path);
-		
-		printf("%s\n",my_path);
-		//Problema qui
-		for (j=0; j<i-1; j++) {
-			strcat(my_path, token[j]);
-			strcat(my_path, "/");
-		}
+		char * pch;
+		pch=strrchr(my_path,'/');
+		*pch = 0x00;
+		if(strlen(my_path) == 0)
+			strcat(my_path,"/");
 		return;
 	}
 	return;
@@ -259,6 +246,15 @@ void FileSystem_rm(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 }
 
 void FileSystem_help(void){
+	printf("\nUsage mkdir <directory_name> to create a new directory.\n");
+	printf("Usage write <file_name> to write inside it.\n");
+	printf("Usage more <file_name> to read inside it.\n");
+	printf("Usage touch <file_name> to create a new file.\n");
+	printf("Usage cd <directory_name> to go to this directory or cd .. to go to parent directory.\n");
+	printf("Usage ls to show directory contents.\n");
+	printf("Usage rm <file or directory name> to remove a file or directory with its contents.\n");
+	printf("Usage info to show informations about your disk.\n");
+	printf("Press CTRL+C to stop the file_system.\n\n");
 	return;
 }
 
@@ -299,6 +295,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	//ISTRUZIONI
+	printf("Hi! This is our file_system, your disk is %s. If it is your first lauch, use help to show more informations. \nGood Luck! Created by Alessandro and Romeo.\n\n", filename);
 	
 	while(1){
 		char* arguments[MAX_ARGUMENTS] = {NULL};
