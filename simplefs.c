@@ -439,7 +439,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 	//R. Caso in cui posso scrivere direttamente nel primo blocco
 	if(off < space_file_block){
 		//R. Estraggo il File Block
-		if(DiskDriver_readBlock(my_disk,(void*) file_block_tmp, index.blocks[file_index_pos],sizeof(FileBlock)) == -1){
+		if(DiskDriver_readBlock(my_disk,(void*) file_block_tmp, index.blocks[file_index_pos],sizeof(FirstFileBlock)) == -1){
 			fprintf(stderr,"Error in SimpleFS_write: could not read file block 1.\n");
 			free(file_block_tmp);
 			return -1;
@@ -451,7 +451,7 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 			written_bytes += to_write;
 			if(f->pos_in_file+written_bytes > ffb->fcb.written_bytes) //R. Aggiorno written_bytes
 				ffb->fcb.written_bytes = f->pos_in_file+written_bytes;
-			if(DiskDriver_updateBlock(my_disk,(void*)file_block_tmp, index.blocks[file_index_pos],sizeof(FileBlock)) == -1){ //R. Aggiorno file block su disco
+			if(DiskDriver_updateBlock(my_disk,(void*)file_block_tmp, index.blocks[file_index_pos],sizeof(FirstFileBlock)) == -1){ //R. Aggiorno file block su disco
 				fprintf(stderr,"Error in SimpleFS_write: could not update file block 1.\n");
 				free(file_block_tmp);
 				return -1;
@@ -577,7 +577,7 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 	}
 		
 	//R. Estraggo il FileBlock da cui partire
-	if(DiskDriver_readBlock(my_disk, (void*)file_block_tmp, index.blocks[file_index_pos], sizeof(FileBlock)) == -1){
+	if(DiskDriver_readBlock(my_disk, (void*)file_block_tmp, index.blocks[file_index_pos], sizeof(FirstFileBlock)) == -1){
 		fprintf(stderr,"Error in SimpleFS_read: could not read file block.\n");
 		return -1;
 	}

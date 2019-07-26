@@ -122,7 +122,7 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	printf("%sOK%s",KGRN,KNRM);
-	
+	/*
 	printf("\nCreation of mare.txt (Expected: OK)... ");
 	FileHandle* file2 = SimpleFS_createFile(current_dir,"mare.txt");
 	if(file2 == NULL){
@@ -166,7 +166,7 @@ int main(int agc, char** argv) {
 	}
 	
 	printf("\n-----------------------------------------------------\n\n");
-	
+	*/
 	//Leggo il contenuto della directory /
 	if(readDirectory(current_dir) == -1){
 		fprintf(stderr,"%sError: could not read current dir.\n%s",KRED,KNRM);
@@ -176,7 +176,7 @@ int main(int agc, char** argv) {
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
 	
-	printf("Open file casa.txt (Expected: OK)... ");
+	printf("Open file casa.txt (Expected: OK)...\n ");
 	FileHandle* casa_file_handle = SimpleFS_openFile(current_dir, "casa.txt"); 
     if (casa_file_handle == NULL) {
         fprintf(stderr,"%sError: openFile on casa.txt.\n%s",KRED,KNRM);
@@ -187,7 +187,7 @@ int main(int agc, char** argv) {
     printf("%sOK%s, opened file: %s\n", KGRN,KNRM, casa_file_handle->fcb->fcb.name);
     if(casa_file_handle != NULL)
 		SimpleFS_close_file(casa_file_handle);
-    
+    /*
     printf("Open file mare.txt (Expected: OK)... ");
 	FileHandle* mare_file_handle = SimpleFS_openFile(current_dir, "mare.txt"); 
     if (mare_file_handle == NULL) {
@@ -238,7 +238,7 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
-	
+	*/
 	//Test per write and read. Prima scrivo sul file, poi leggo.
 	printf("Writing on casa.txt (Expected: Ok)... ");
 	char* to_write = (char*)malloc(129*sizeof(char));
@@ -380,7 +380,7 @@ int main(int agc, char** argv) {
     printf("%sError: seek doesn't work.\n%s", KGRN,KNRM);
 	
 	printf("\n-----------------------------------------------------\n\n");
-	
+	/*
 	printf("Change directory, we move in home (Expected: Ok)... ");
 	
     if (SimpleFS_changeDir(current_dir, "home") == -1) {
@@ -569,7 +569,7 @@ int main(int agc, char** argv) {
         free(disk);
 		return -1;
 	}
-	printf("\n\n-----------------------------------------------------\n\n");
+	printf("\n\n-----------------------------------------------------\n\n");*/
 	/*
 	printf("Removing file marte.txt (Expected: Ok)... ");
 	if (SimpleFS_remove(current_dir, "marte.txt") == -1) {
@@ -585,7 +585,7 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
-	*/
+	*//*
 	printf("Removing file orso.txt (Expected: Ok)... ");
 	if (SimpleFS_remove(current_dir, "orso.txt") == -1) {
 		fprintf(stderr,"%sError: could not remove orso.txt.\n%s",KRED,KNRM);
@@ -756,13 +756,6 @@ int main(int agc, char** argv) {
 	
 	printf("\n\n-----------------------------------------------------\n\n");
 	
-	/*
-				204 bytes in 1 blocks are definitely lost in loss record 1 of 2
-	==13632==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
-	==13632==    by 0x10CEA9: SimpleFS_init (simplefs.c:15)
-	==13632==    by 0x10A24B: main (simplefs_test.c:102)
-
-	*/
 
 	printf("Change directory, we move in documents (Expected: Ok)... ");
 	
@@ -830,13 +823,6 @@ int main(int agc, char** argv) {
 	}
 	
 	printf("\n\n-----------------------------------------------------\n\n");
-	
-	/*
-				204 bytes in 1 blocks are definitely lost in loss record 2 of 2
-	==13632==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
-	==13632==    by 0x10EA5B: SimpleFS_changeDir (simplefs.c:680)
-	==13632==    by 0x10CB09: main (simplefs_test.c:833)
-	*/
 	
 	printf("Change directory, we go back in images (Expected: Ok)... ");
 	
@@ -991,14 +977,14 @@ int main(int agc, char** argv) {
 		return -1;
 	}
 	printf("\n\n-----------------------------------------------------\n\n");
-	
+	*/
 	
 	// Chiudo tutto
 	
 	//Chiudo i FileHandle Aperti
 	if(file1 != NULL)
 		SimpleFS_close_file(file1);
-	if(file2 != NULL)
+	/*if(file2 != NULL)
 		SimpleFS_close_file(file2);
 	if(file3 != NULL)
 		SimpleFS_close_file(file3);
@@ -1025,7 +1011,7 @@ int main(int agc, char** argv) {
 	if(file14 != NULL)
 		SimpleFS_close_file(file14);
 	if(file15 != NULL)
-		SimpleFS_close_file(file15);
+		SimpleFS_close_file(file15);*/
 	//printf("%s\n",current_dir->parent_dir->fcb.name);
 		
 	if(current_dir != NULL)
