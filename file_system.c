@@ -145,7 +145,7 @@ void FileSystem_more(int arguments_number, char* arguments[MAX_ARGUMENTS]){
         return;
     }
 
-    int file_size = file_h->fcb->fcb.size_in_bytes;
+    int file_size = file_h->fcb->fcb.written_bytes;
     char* text = (char*) malloc((file_size+1)*sizeof(char));
      if(text == NULL){
 		fprintf(stderr, "%sError in FileSystem_more: malloc on text.\n%s\n", KRED, KNRM);
@@ -174,10 +174,13 @@ void FileSystem_touch(int arguments_number, char* arguments[MAX_ARGUMENTS]){
 		fprintf(stderr, "%sUsage FileSystem_touch: file %s.\n%s", KRED, arguments[1], KNRM);
         return;
     }
+    
+    FileHandle* file = SimpleFS_createFile(current_dir, arguments[1]);
    
-    if (SimpleFS_createFile(current_dir, arguments[1]) == NULL) 
+    if (file == NULL) 
 		fprintf(stderr, "%sError in FileSystem_touch: could not create file %s.\n%s", KRED, arguments[1], KNRM);
 	
+	SimpleFS_close_file(file);
 }
 
 void FileSystem_cd(int arguments_number, char* arguments[MAX_ARGUMENTS]){
