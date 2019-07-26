@@ -257,7 +257,7 @@ void FileSystem_help(void){
 	printf("Usage ls to show directory contents.\n");
 	printf("Usage rm <file or directory name> to remove a file or directory with its contents.\n");
 	printf("Usage info to show informations about your disk.\n");
-	printf("Press CTRL+C to stop the file_system.\n\n");
+	printf("Usage quit or press CTRL+C to stop the file_system.\n\n");
 	return;
 }
 
@@ -339,6 +339,9 @@ int main(int argc, char *argv[]){
         else if (strcmp(arguments[0], "info") == 0) {
             FileSystem_info(filename); 
         }
+        else if (strcmp(arguments[0], "quit") == 0){
+			my_function(SIGINT);
+		}
         else {
             printf("Invalid command\n");
         }
