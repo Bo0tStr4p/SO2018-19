@@ -2,7 +2,8 @@
 #include "bitmap.h"
 #include "disk_driver.h"
 
-#define MAX_BLOCKS 10
+#define MAX_BLOCKS 126
+#define MAX_BLOCKS_FIRST 87
 
 /*these are structures stored on disk*/
 
@@ -23,6 +24,13 @@ typedef struct {
 //a memorizzare i blocchi da leggere nell'ordine in cui sono presenti all'interno 
 //dell'array
 typedef struct BlockIndex BlockIndex;
+typedef struct FirstBlockIndex FirstBlockIndex;
+
+struct FirstBlockIndex{
+  int previous; 				//Memorizziamo il predecessore
+  int blocks[MAX_BLOCKS_FIRST];	    //Inizialmente tutti vuoti, mettiamo tutto a -1					
+  int next; 					//Memorizziamo il successore
+};
 
 struct BlockIndex{
   int previous; 				//Memorizziamo il predecessore
@@ -48,8 +56,9 @@ typedef struct {
 
 /******************* stuff on disk BEGIN *******************/
 typedef struct {
-  BlockIndex index;
+  FirstBlockIndex index;
   FileControlBlock fcb;
+  int num_blocks;
 } FirstFileBlock;
 
 // this is one of the next physical blocks of a file
@@ -61,7 +70,7 @@ typedef struct {
 
 // this is the first physical block of a directory
 typedef struct {
-  BlockIndex index;
+  FirstBlockIndex index;
   FileControlBlock fcb;
   int num_entries;
   /*int file_blocks[ (BLOCK_SIZE
@@ -171,18 +180,23 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename);
 
 // Funzione per creare un nuovo blocco di tipo index
 BlockIndex create_block_index(int previous);
+FirstBlockIndex create_block_index_first(int previous);
 
 // Funzione per ottenere il blocco index da un file
 BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk);
+FirstBlockIndex* get_block_index_file_first(FileBlock* file, DiskDriver* disk);
 
 // Funzione per ottenere il blocco index da una directory
 BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk);
+FirstBlockIndex* get_block_index_directory_first(DirectoryBlock* directory, DiskDriver* disk);
 
 // Funzione che restituisce il blocco successivo file
 FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk);
+FileBlock* get_next_block_file_first(FileBlock* file,DiskDriver* disk);
 
 // Funzione che restituisce il blocco successivo directory
 DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk);
+DirectoryBlock* get_next_block_directory_first(DirectoryBlock* directory,DiskDriver* disk);
 
 //   Funzione per creare un nuovo file blocks collegandolo con il blocco index di riferimento.
 //   Restituisce il numero del blocco del disk driver su cui fare write, in caso di errore -1.
@@ -191,17 +205,22 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 //   e successivamente scritto nel disco (tramite writeBlock) nel int restituito dalla funzione.
 
 int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver* disk);
+int create_next_file_block_first(FileBlock* current_block, FileBlock* new, DiskDriver* disk);
 
 // Funzione per creare un nuovo directory block collegandolo con il blocco index di riferimento.
 int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk);
+int create_next_directory_block_first(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk);
 
 void print_index_block(BlockIndex* index);
+void print_index_block_first(FirstBlockIndex* index);
 
 // Funzione per ottenere la posizione nel disco di un file block
 int get_position_disk_file_block(FileBlock* file_block, DiskDriver* disk);
+int get_position_disk_file_block_first(FileBlock* file_block, DiskDriver* disk);
 
 // Funzione per ottenere la posizione nel disco di un directory block
 int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDriver* disk);
+int get_position_disk_directory_block_first(DirectoryBlock* directory_block, DiskDriver* disk);
 
 // Funzione per cercare se un file o directory con nome elem_name è gia presente sul disco.
 // Restituisce la posizione dell'elemento nel blocco directory in caso trovi il file sul disco, -1 in caso non la trovi o di errore. 

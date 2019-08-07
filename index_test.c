@@ -88,7 +88,7 @@ int main(int argc, char** argv){
 	
 	printf("\nCreation of FirstFileBlock with index block (Exprected: Ok)...");
 	
-	BlockIndex index_file = create_block_index(-1);	
+	FirstBlockIndex index_file = create_block_index_first(-1);	
 	
 	//R. Riempio con valori casuali. Attualmente non sono necessari
 	FileControlBlock file_control_block = {
@@ -186,7 +186,7 @@ int main(int argc, char** argv){
 	printf("First file block position: %d\n\n",first_free_block_position);
 	
 	printf("%s",KCYN);
-	print_index_block(&ffb_read->index);
+	print_index_block_first(&ffb_read->index);
 	
 	printf("%s\n",KYEL);
 	DiskDriver_print_information(my_disk,filename);
@@ -208,8 +208,10 @@ int main(int argc, char** argv){
 		
 		printf("\n-----------------------------------------------------\nWriting block %d to disk (Expected: Ok)...",i+1);
 		
-		
-		block_position = create_next_file_block(current, file_block_tmp, my_disk);
+		if(ffb_read->fcb.block_in_disk == current->index_block)
+			block_position = create_next_file_block_first(current, file_block_tmp, my_disk);
+		else
+			block_position = create_next_file_block(current, file_block_tmp, my_disk);
 		//free(current); //A. questa è da levare da qui, causa problemi. current viene riutilizzato successivamente alla riga 181
 		
 		
@@ -244,7 +246,7 @@ int main(int argc, char** argv){
 		}
 	
 		printf("%s",KCYN);
-		print_index_block(&ffb_read->index);
+		print_index_block_first(&ffb_read->index);
 	
 		printf("%s\n",KYEL);
 		DiskDriver_print_information(my_disk,filename);
@@ -289,7 +291,11 @@ int main(int argc, char** argv){
 	for(i=1;i<15;i++){
 		printf("Reading block %d to disk (Expected: Ok)... ",i+1);
 		
-		file_block_tmp = get_next_block_file(current,my_disk);
+		if(ffb_read->fcb.block_in_disk == current->index_block)
+			file_block_tmp = get_next_block_file_first(current,my_disk);
+		else
+			file_block_tmp = get_next_block_file(current, my_disk);
+			
 		//free(current);
 		printf("%sOK%s\nDATA:\n",KGRN,KNRM);
 	printf("%s%s%s\n\n", KYEL, file_block_tmp->data, KNRM);
@@ -314,7 +320,7 @@ int main(int argc, char** argv){
 	
 	printf("\nCreation of FirstDirectoryBlock with index block (Exprected: Ok)...");
 	
-	BlockIndex index_directory = create_block_index(-1);	
+	FirstBlockIndex index_directory = create_block_index_first(-1);	
 	
 	
 	FirstDirectoryBlock fdb = {
@@ -399,7 +405,7 @@ int main(int argc, char** argv){
 	printf("First directory block position: %d\n\n",first_free_block_position);
 	
 	printf("%s",KCYN);
-	print_index_block(&fdb_read->index);
+	print_index_block_first(&fdb_read->index);
 	
 	printf("%s\n",KYEL);
 	DiskDriver_print_information(my_disk,filename);
@@ -414,7 +420,10 @@ int main(int argc, char** argv){
 		
 		printf("\n-----------------------------------------------------\nWriting block %d to disk (Expected: Ok)...",i+1);
 		
-		block_position = create_next_directory_block(current_dir, directory_block_tmp, my_disk);
+		if(fdb_read->fcb.block_in_disk == current_dir->index_block)
+			block_position = create_next_directory_block_first(current_dir, directory_block_tmp, my_disk);
+		else
+			block_position = create_next_directory_block(current_dir, directory_block_tmp, my_disk);
 		
 		
 		//A. Scrivo dei valori per riempire i blocchi
@@ -444,7 +453,7 @@ int main(int argc, char** argv){
 		}
 	
 		printf("%s",KCYN);
-		print_index_block(&fdb_read->index);
+		print_index_block_first(&fdb_read->index);
 	
 		printf("%s\n",KYEL);
 		DiskDriver_print_information(my_disk,filename);
@@ -493,7 +502,10 @@ int main(int argc, char** argv){
 	for(i=1;i<15;i++){
 		printf("Reading block %d to disk (Expected: Ok)... ",i+1);
 		
-		directory_block_tmp = get_next_block_directory(current_dir,my_disk);
+		if(fdb_read->fcb.block_in_disk == current_dir->index_block)
+			directory_block_tmp = get_next_block_directory_first(current_dir,my_disk);
+		else
+			directory_block_tmp = get_next_block_directory(current_dir, my_disk);
 		//free(current_dir);
 		
 		printf("%sOK%s\nFILE BLOCKS:\n",KGRN,KNRM);

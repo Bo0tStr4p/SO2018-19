@@ -57,7 +57,7 @@ void SimpleFS_format(SimpleFS* fs){
 	root_directory.index.next = -1;							// Essendo appena inizializzato, ancora non c'è un successivo blocco index, quello corrente non è pieno
 	
 	int i;
-	for(i=0; i<MAX_BLOCKS; i++){
+	for(i=0; i<MAX_BLOCKS_FIRST; i++){
 		root_directory.index.blocks[i] = -1;				// Tutti i blocchi vuoti settati a -1
 	}
 	
@@ -150,6 +150,7 @@ FileHandle* SimpleFS_createFile(DirectoryHandle* d, const char* filename){
 	} 
 	file_to_create->index.previous = -1;
 	file_to_create->index.next = -1;
+	file_to_create->num_blocks = 0;
 
 	for(i=0; i<MAX_BLOCKS; i++){
 		file_to_create->index.blocks[i] = -1;				//R. Tutti i blocchi vuoti settati a -1
@@ -269,7 +270,10 @@ int SimpleFS_readDir(char** names,int* flag, DirectoryHandle* d){
 	//A. Caso in cui ci sono file non contenuti nello stesso blocco directory e quindi bisogna cambiare blocco
 	if (fdb->num_entries > i){	
 		
-		db = get_next_block_directory(db,disk);
+		if(fdb->fcb.block_in_disk == db->index_block)
+			db = get_next_block_directory_first(db, disk);
+		else
+			db = get_next_block_directory(db, disk);
 
 		while (db != NULL){	 
 
@@ -281,7 +285,10 @@ int SimpleFS_readDir(char** names,int* flag, DirectoryHandle* d){
 				}
 				//dim_names++;
 			}
-			db = get_next_block_directory(db,disk);
+			if(fdb->fcb.block_in_disk == db->index_block)
+				db = get_next_block_directory_first(db, disk);
+			else
+				db = get_next_block_directory(db, disk);
 		}
 	}
 	free(db);
@@ -356,7 +363,10 @@ FileHandle* SimpleFS_openFile(DirectoryHandle* d, const char* filename){
             }
 
 			//R. Estraggo il Directory Block Successivo
-			dir_block = get_next_block_directory(dir_block, disk);
+			if(first_directory_block->fcb.block_in_disk == dir_block->index_block)
+				dir_block = get_next_block_directory_first(dir_block, disk);
+			else
+				dir_block = get_next_block_directory(dir_block, disk);
 		}
 		
 		//R. Verifico se il file è stato trovato e restituisco il suo file handle
@@ -420,13 +430,21 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 	}
 	
 	//R. Calcolo il blocco al quale devo accedere
-	int index_block_ref = off/(10*space_file_block);
-	int file_index_pos = (off - index_block_ref*space_file_block*10)/space_file_block;
-		
-	BlockIndex index = first_file->index;
+	int file_index_pos;
+	int index_block_ref = off - MAX_BLOCKS_FIRST*space_file_block;
+	if(index_block_ref < 0){
+		index_block_ref = 0;
+		file_index_pos = off / (MAX_BLOCKS*space_file_block);
+		off = off - file_index_pos * space_file_block;
+	}
+	else{
+		index_block_ref = index_block_ref / (MAX_BLOCKS*space_file_block);
+		file_index_pos = ((off - MAX_BLOCKS_FIRST*space_file_block)-index_block_ref*(MAX_BLOCKS*space_file_block))/space_file_block;
+		off = off - (off - MAX_BLOCKS_FIRST*space_file_block)-index_block_ref*(MAX_BLOCKS*space_file_block);
+	}
 	
-	//R. Calcolo il nuovo offset corretto
-	off = off - index_block_ref*space_file_block*10;
+		
+	FirstBlockIndex index = first_file->index;
 		
 	//R. mi posiziono al blocco index di riferimento
 	for(i=0;i<index_block_ref;i++){
@@ -488,7 +506,11 @@ int SimpleFS_write(FileHandle* f, void* data, int size){
 	while(written_bytes < size && file_block_tmp != NULL){		
 		
 		//R. Creo il blocco successivo per scrivere le informazioni
-		block_position = create_next_file_block(current, file_block_tmp, my_disk);
+		if(first_file->fcb.block_in_disk == file_block_tmp->index_block)
+			block_position = create_next_file_block_first(current, file_block_tmp, my_disk);
+		else
+			block_position = create_next_file_block(current, file_block_tmp, my_disk);
+		
 		if(block_position == -1){
 			fprintf(stderr,"Error in SimpleFS_write: could not create next file block.\n");
 			free(file_block_tmp);
@@ -563,10 +585,20 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 	}
 	
 	//R. Calcolo il blocco al quale devo accedere
-	int index_block_ref = off/(10*space_file_block);
-	int file_index_pos = (off - index_block_ref*space_file_block*10)/space_file_block;
+	int file_index_pos;
+	int index_block_ref = off - MAX_BLOCKS_FIRST*space_file_block;
+	if(index_block_ref < 0){
+		index_block_ref = 0;
+		file_index_pos = off / (MAX_BLOCKS*space_file_block);
+		off = off - file_index_pos * space_file_block;
+	}
+	else{
+		index_block_ref = index_block_ref / (MAX_BLOCKS*space_file_block);
+		file_index_pos = ((off - MAX_BLOCKS_FIRST*space_file_block)-index_block_ref*(MAX_BLOCKS*space_file_block))/space_file_block;
+		off = off - (off - MAX_BLOCKS_FIRST*space_file_block)-index_block_ref*(MAX_BLOCKS*space_file_block);
+	}
 		
-	BlockIndex index = first_file->index;
+	FirstBlockIndex index = first_file->index;
 		
 	//R. mi posiziono al blocco index di riferimento
 	for(i=0;i<index_block_ref;i++){
@@ -581,8 +613,6 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 		fprintf(stderr,"Error in SimpleFS_read: could not read file block.\n");
 		return -1;
 	}
-	
-	off = off - index_block_ref*space_file_block*10;
 	
 	//R. Caso in cui devo partire dal primo file block e non devo andare oltre
 	if(off < space_file_block && to_read <= (space_file_block-off)){	
@@ -607,7 +637,11 @@ int SimpleFS_read(FileHandle* f, void* data, int size){
 	
 	while(bytes_read < size && file_block_tmp != NULL){
 		//R. Estraggo il blocco successivo
-		file_block_tmp =  get_next_block_file(file_block_tmp,my_disk);
+		if(first_file->fcb.block_in_disk == file_block_tmp->index_block)
+			file_block_tmp =  get_next_block_file_first(file_block_tmp,my_disk);
+		else
+			file_block_tmp =  get_next_block_file(file_block_tmp,my_disk);
+		
 		if(file_block_tmp == NULL){
 			f->pos_in_file += bytes_read;
 			free(file_block_tmp);
@@ -765,7 +799,10 @@ int SimpleFS_changeDir(DirectoryHandle* d, char* dirname){
 					}
 				}
 			}
-			db = get_next_block_directory(db,disk);
+			if(fdb->fcb.block_in_disk == db->index_block)
+				db = get_next_block_directory_first(db, disk);
+			else
+				db = get_next_block_directory(db,disk);
 		}
 		
 		//fprintf(stderr, "Errore in SimpleFS_changeDir: could not change directory.\n");
@@ -824,7 +861,7 @@ int SimpleFS_mkDir(DirectoryHandle* d, char* dirname){
 	dir_to_create->fcb.is_dir = 1;
 	dir_to_create->num_entries = 0;
 	
-	BlockIndex index = create_block_index(-1);
+	FirstBlockIndex index = create_block_index_first(-1);
 	
 	//R. Creo il primo blocco index
 	DirectoryBlock dir_block = {
@@ -937,13 +974,23 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		}
 		
 		while(fb != NULL){
-			if(DiskDriver_freeBlock(disk, get_position_disk_file_block(fb, disk)) == -1){
+			int position;
+			
+			if(ffb->fcb.block_in_disk == fb->index_block)
+				position = get_position_disk_file_block_first(fb, disk);
+			else
+				position = get_position_disk_file_block(fb, disk);
+			
+			if(DiskDriver_freeBlock(disk, position) == -1){
 				fprintf(stderr,"Error in SimpleFS_remove: free_block.\n");
 				free(db_update);
 				free(ffb);
 				free(fb);
 			}
-			fb = get_next_block_file(fb, disk);
+			if(ffb->fcb.block_in_disk == fb->index_block)
+				fb = get_next_block_file_first(fb, disk);
+			else
+				fb = get_next_block_file(fb, disk);
 		}
 		
 		if(DiskDriver_freeBlock(disk, exist_pos) == -1){
@@ -960,8 +1007,15 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		fdb->num_entries -= 1;											//A. Aggiorno il numero di elementi all'interno della directory
 		//printf("fdb->num_entries:%d\n",fdb->num_entries);
 		
+		int position;
+		
+		if(fdb->fcb.block_in_disk == db_update->index_block)
+			position = get_position_disk_directory_block_first(db_update, disk);
+		else
+			position = get_position_disk_directory_block(db_update, disk);
+			
 		//A. Aggiorno il DirectoryBlock da cui ho tolto il file
-		if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){
+		if(DiskDriver_updateBlock(disk, db_update, position, sizeof(DirectoryBlock)) == -1){
 			fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 			free(db_update);
 			return -1;
@@ -1000,7 +1054,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		}
 		//A. La directory contiene elementi al suo interno
 		if(fdb_to_remove->num_entries > 0){
-			
+
 			if(SimpleFS_changeDir(d, fdb_to_remove->fcb.name) == -1){
 				fprintf(stderr, "Error in SimpleFS_remove: change dir of fdb_to_remove.\n");
 				free(db_update);
@@ -1042,7 +1096,11 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 						SimpleFS_remove(d, ffb->fcb.name);
 					}
 				}
-				dir_up = get_next_block_directory(dir_up, disk);
+		
+				if(fdb_to_remove->fcb.block_in_disk == dir_up->index_block)
+					dir_up = get_next_block_directory_first(dir_up, disk);
+				else
+					dir_up = get_next_block_directory(dir_up, disk);
 			}
 			
 			if(SimpleFS_changeDir(d, "..") == -1){
@@ -1070,7 +1128,14 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			
 			db_update->file_blocks[idx] = 0;
 			
-			if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){
+			int position;
+			
+			if(fdb_to_remove->fcb.block_in_disk == db_update->index_block)
+				position = get_position_disk_directory_block_first(db_update, disk);
+			else
+				position = get_position_disk_directory_block(db_update, disk);
+			
+			if(DiskDriver_updateBlock(disk, db_update, position, sizeof(DirectoryBlock)) == -1){
 				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 				free(db_update);
 				free(ffb);
@@ -1113,7 +1178,14 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 			d->dcb = fdb; 						//A. ripristino la directory che precedentemente ho scorso
 			db_update->file_blocks[idx] = 0;
 			
-			if(DiskDriver_updateBlock(disk, db_update, get_position_disk_directory_block(db_update, disk), sizeof(DirectoryBlock)) == -1){
+			int position;
+			
+			if(fdb_to_remove->fcb.block_in_disk == db_update->index_block)
+				position = get_position_disk_directory_block_first(db_update, disk);
+			else
+				position = get_position_disk_directory_block(db_update, disk);
+			
+			if(DiskDriver_updateBlock(disk, db_update, position, sizeof(DirectoryBlock)) == -1){
 				fprintf(stderr, "Error in SimpleFS_remove: on update db_update.\n");
 				free(db_update);
 				free(ffb);
@@ -1137,242 +1209,7 @@ int SimpleFS_remove(DirectoryHandle* d, char* filename){
 		}
 		
 	}
-		
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	/*
-	
-	if(d == NULL || filename == NULL){
-		fprintf(stderr,"Error in SimpleFS_remove: bad parameters.\n");
-		return -1;
-	}
-		
-	int i,res, id = -1, dim = (BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int);
-	int pos = -1;
-	
-	DiskDriver* disk = d->sfs->disk;
-	FirstDirectoryBlock* fdb = d->dcb;
-	//DirectoryBlock* db = d->current_block;
-	
-	//A. Controllo se la directory è vuota. Se lo è inutile continuare, non c'è nulla da rimuovere
-	if(fdb->num_entries < 1){
-		fprintf(stderr,"Error in SimpleFS_remove: empty directory.\n");
-		return -1;
-	}
-	
-	//A. La directory non è vuota. Cerco il file nei blocchi directory
-	
-	pos = SimpleFS_already_exists(disk,fdb,filename);
-	if(pos == -1){
-		fprintf(stderr, "Errore in SimpleFS_remove: l'elemento che si sta cercando non è in questa directory");
-		return -1;
-	}
-	
-	DirectoryBlock* db = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
-	if(db == NULL){
-		fprintf(stderr,"Error in SimpleFS_remove: malloc on db.\n");
-		return -1;
-	}
-	
-	if(DiskDriver_readBlock(disk,db,fdb->index.blocks[0],sizeof(DirectoryBlock)) == -1){
-		fprintf(stderr,"Error in SimpleFS_remove: could not read directory block one.\n");
-		free(db);
-		return -1;
-	}
-	
-	FirstFileBlock ffb_to_check;
-	//int pos_in_disk;
-	
-	while(db != NULL && id == -1){
-		
-		for(i=0; i<dim; i++){
-			if(db->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb_to_check,db->file_blocks[i],sizeof(FirstFileBlock)) != -1){
-				if(strcmp(ffb_to_check.fcb.name,filename) == 0){ 						
-					//esiste già un elemento con lo stesso nome presente sul disco
-					pos = db->file_blocks[i];
-					id = i;
-					break;
-				}
-			}
-		}
-		if(id != -1) break;
-		db = get_next_block_directory(db,disk);
-	}
-	//printf("db:%d\n", db->file_blocks[id]);
-	//printf("pos:%d\n", pos);
-	//FINE RICERCA
-	
-	//Ricerca del file finita
-	if(pos == -1){
-		fprintf(stderr, "Error in SimpleFS_remove: the element is not in this directory.\n");
-		return -1;
-	}
-	
-	
-	FirstFileBlock* ffb_toRemove = (FirstFileBlock*)malloc(sizeof(FirstFileBlock));
-	if(ffb_toRemove == NULL){
-		fprintf(stderr, "Error in SimpleFS_remove: can not malloc FirstFileBlock\n");
-		return -1;
-	}
-	
-	res = DiskDriver_readBlock(disk,ffb_toRemove,pos,sizeof(FirstFileBlock));
-	if(res == -1){
-		fprintf(stderr,"Error in SimpleFS_remove: could not read FirstFileBlock.\n");
-		return -1;
-	};
-	
-	int isDir = ffb_toRemove->fcb.is_dir;
-	
-	//A. Verifico se sto rimuovendo un file o una cartella e mi regolo di conseguenza
-	//A. Non sono per niente sicuro sia corretto. Probabilmente dovrà essere fixato.
-	//A. Il problema è che vado a leggere un FileBlock nella stessa posizione in cui leggo prima il FirstFileBlock.
-	if(isDir == 0){
-		FileBlock* current_fb = (FileBlock*)malloc(sizeof(FileBlock));
-		int fb_pos_in_disk = pos; 			//A. non vado ad alterare pos perchè mi servirà dopo per liberare il FirstFileBlock che è in posizione pos sul disco.
-		
-		//A. leggo il primo dei FileBlock
-		res = DiskDriver_readBlock(disk, current_fb, ffb_toRemove->index.blocks[0], sizeof(FileBlock));
-		if(res == -1){
-			fprintf(stderr,"Error in SimpleFS_remove: could not read FileBlock.\n");
-			return -1;
-		}
-		
-		//A. elimino tutti i FileBlock del file
-		while(current_fb != NULL){
-			fb_pos_in_disk = get_position_disk_file_block(current_fb,disk);
-				
-			res = DiskDriver_readBlock(disk, current_fb, fb_pos_in_disk, sizeof(FileBlock));
-			if(res == -1){
-				fprintf(stderr, "Error in SimpleFS_remove: DiskDriver_readBlock.\n");
-				return -1;
-			}
-			current_fb = get_next_block_file(current_fb,disk);
-				
-			res = DiskDriver_freeBlock(disk,fb_pos_in_disk);
-			if(res == -1){
-				fprintf(stderr, "Error in SimpleFS_remove: block in fb_pos_in_disk not freed\n");
-				return -1;
-			}
-		}
-		
-		res = DiskDriver_freeBlock(disk,pos);
-		if(res == -1){
-			fprintf(stderr, "Error in SimpleFS_remove: FirstFileBlock in position pos not freed\n");
-			return -1;
-		}
-		
-		db->file_blocks[id] = 0;
-		fdb->num_entries--;
-		d->dcb = fdb; //A. ripristino la directory che precedentemente ho scorso
-		
-		//A. Aggiorno il FirsDirectoryBlock e il DirectoryBlock da cui ho tolto il file
-		if(DiskDriver_updateBlock(disk, fdb, fdb->fcb.block_in_disk, sizeof(FirstDirectoryBlock)) == -1){
-			fprintf(stderr,"Error in SimpleFS_remove: updateBlock of fdb.\n");
-			free(db);
-			return -1;
-		}
-	
-		//A. E aggiorno il DirectoryBlock da cui ho tolto il file
-		int pos_db = get_position_disk_directory_block(db,disk);
-		if(DiskDriver_updateBlock(disk, db, pos_db, sizeof(DirectoryBlock)) == -1){
-			fprintf(stderr,"Error in SimpleFS_remove: updateBlock of db.\n");
-			free(db);
-			return -1;
-		}
-		
-		free(ffb_toRemove);
-		free(db);
-		return 0;
-	}
-	//A. sto eliminando invece una directory
-	else{
-		FirstDirectoryBlock fdb_toRemove;
-		res = DiskDriver_readBlock(disk, &fdb_toRemove,pos, sizeof(FirstDirectoryBlock));
-		if(res == -1){
-			fprintf(stderr,"Error in SimpleFS_remove: could not read FirstDirectoryBlock.\n");
-			return -1;
-		}
-		
-		//A. La directory contiene elementi al suo interno
-		if(fdb_toRemove.num_entries > 0){
-			
-			//A. Stesso problema di prima: vado a leggere un DirectoryBlock nella stessa posizione in cui leggo prima il FirstDirectoryBlock.
-			DirectoryBlock current_db;
-			int db_pos_in_disk = pos;								//A. non vado ad alterare pos perchè mi servirà dopo per liberare il FirstDirectoryBlock che è in posizione pos sul disco.
-			
-			
-			res = DiskDriver_readBlock(disk,&current_db,db_pos_in_disk,sizeof(DirectoryBlock));
-			if(res == -1){
-				return -1;
-			}
-			
-			//A. ricorsivamente elimino tutti i file
-			for(i=0; i<dim; i++){
-				FirstFileBlock ffb;
-				if(current_db.file_blocks[i] > 0 && DiskDriver_readBlock(disk, &ffb, current_db.file_blocks[i], sizeof(FirstFileBlock)) != -1)
-					SimpleFS_remove(d,ffb.fcb.name); 
-			}
-			
-			//A. Non ho eliminato tutti gli elementi. Continuo.
-			if(fdb_toRemove.num_entries > i){
-				FirstFileBlock ffb;
-				DirectoryBlock* next_block = get_next_block_directory(&current_db,disk);
-			
-				while(next_block != NULL){
-					db_pos_in_disk = get_position_disk_directory_block(next_block,disk);
-					
-					res = DiskDriver_readBlock(disk, &ffb, db_pos_in_disk, sizeof(FirstFileBlock));
-					if(res == -1){
-						fprintf(stderr, "Error in SimpleFS_remove: DiskDriver_readBlock error.\n");
-						return -1;
-					}
-				
-					for(i=0; i<dim; i++){
-						if(next_block->file_blocks[i] > 0 && DiskDriver_readBlock(disk,&ffb, next_block->file_blocks[i], sizeof(FirstFileBlock)) != -1){
-							fprintf(stderr, "Error in SimpleFS_remove: could not read block.\n");
-							return -1;
-						}
-						SimpleFS_remove(d,ffb.fcb.name);
-					}
-					next_block = get_next_block_directory(next_block,disk);
-					
-					res = DiskDriver_freeBlock(disk,db_pos_in_disk);
-					if(res == -1){
-						fprintf(stderr, "Error in SimpleFS_remove: block in db_pos_in_disk not freed.\n");
-						return -1;
-					}
-				}
-				
-				res = DiskDriver_freeBlock(disk,pos);
-				if(res == -1){
-					fprintf(stderr, "Error in SimpleFS_remove: FirstDirectoryBlock in position pos not freed.\n");
-					return -1;
-				}
-				
-				d->dcb = fdb; //A. ripristino la directory che precedentemente ho scorso
-				return 0;
-			} 
-		}
-		//A. La directory che sto eliminando non contiene nulla al suo interno
-		else{
-			res = DiskDriver_freeBlock(disk, pos);
-			if(res == -1){
-				fprintf(stderr, "Errore in SimpleFS_remove: FirstDirectoryBlock in position pos not freed.\n");
-			}
-			d->dcb = fdb;
-			return 0;
-		}
-	}*/
+
 	return 0;
 	
 }
@@ -1394,6 +1231,18 @@ BlockIndex create_block_index(int previous){
 	return index;
 }
 
+FirstBlockIndex create_block_index_first(int previous){
+	FirstBlockIndex index;
+	index.previous = previous;		// Si inserisce il predecessore 
+	index.next = -1;				// Essendo appena inizializzato, ancora non c'è un successivo blocco index, quello corrente non è pieno
+	
+	int i;
+	for(i=0; i<MAX_BLOCKS_FIRST; i++){
+		index.blocks[i] = -1;		// Tutti i blocchi vuoti settati a -1
+	}
+	return index;
+}
+
 //R. Funzione per ottenere il blocco index da un file
 BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 	BlockIndex* index = (BlockIndex*)malloc(sizeof(BlockIndex));
@@ -1405,10 +1254,30 @@ BlockIndex* get_block_index_file(FileBlock* file, DiskDriver* disk){
 	return index;
 }
 
+FirstBlockIndex* get_block_index_file_first(FileBlock* file, DiskDriver* disk){
+	FirstBlockIndex* index = (FirstBlockIndex*)malloc(sizeof(FirstBlockIndex));
+	if(DiskDriver_readBlock(disk, index, file->index_block, sizeof(FirstBlockIndex)) == -1){
+			fprintf(stderr,"Error in get_block_index_file.\n");
+			free(index);
+			return NULL;
+		}
+	return index;
+}
+
 //A. Funzione per ottenere il blocco index da una directory
 BlockIndex* get_block_index_directory(DirectoryBlock* directory, DiskDriver* disk){
 	BlockIndex* index = (BlockIndex*)malloc(sizeof(BlockIndex));
 	if(DiskDriver_readBlock(disk, index, directory->index_block, sizeof(BlockIndex)) == -1){
+			fprintf(stderr,"Error in get_block_index_directory.\n");
+			free(index);
+			return NULL;
+		}
+	return index;
+}
+
+FirstBlockIndex* get_block_index_directory_first(DirectoryBlock* directory, DiskDriver* disk){
+	FirstBlockIndex* index = (FirstBlockIndex*)malloc(sizeof(FirstBlockIndex));
+	if(DiskDriver_readBlock(disk, index, directory->index_block, sizeof(FirstBlockIndex)) == -1){
 			fprintf(stderr,"Error in get_block_index_directory.\n");
 			free(index);
 			return NULL;
@@ -1475,6 +1344,65 @@ FileBlock* get_next_block_file(FileBlock* file,DiskDriver* disk){
 	}
 }
 
+//R. Funzione che restituisce il blocco successivo file
+FileBlock* get_next_block_file_first(FileBlock* file,DiskDriver* disk){
+	FirstBlockIndex* index = get_block_index_file_first(file,disk); //R. Estraggo il blocco index
+	if(index == NULL){
+		fprintf(stderr,"Error in get_next_block_file\n");
+		free(file);
+		return NULL;
+	}
+	
+	int current_position = file->position; //R. posizione nell'array index
+	 
+	//R. Caso in cui devo andare nel blocco index successivo
+	if((current_position + 1) == MAX_BLOCKS_FIRST){
+		if(index->next == -1){
+			//fprintf(stderr,"Error in get next block file\n");
+			free(index);
+			free(file);
+			return NULL;
+		}
+		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
+		if(DiskDriver_readBlock(disk, next, index->next, sizeof(BlockIndex)) == -1){
+			//fprintf(stderr,"Errore nella get next block file\n");
+			free(index);
+			free(next);
+			free(file);
+			return NULL;
+		}
+		FileBlock* next_file = (FileBlock*)malloc(sizeof(FileBlock));
+		if(DiskDriver_readBlock(disk, next_file, next->blocks[0], sizeof(FileBlock)) == -1){
+			//fprintf(stderr,"Errore nella get next block file\n");
+			free(index);
+			free(next);
+			free(next_file);
+			free(file);
+			return NULL;
+		}
+		free(index);
+		free(next);
+		free(file);
+		
+		return next_file;
+	}
+	else{
+	//R. Caso in cui mi trovo ancora nello stesso blocco index
+	FileBlock* next_file = (FileBlock*)malloc(sizeof(FileBlock));
+	if(DiskDriver_readBlock(disk, next_file, index->blocks[current_position + 1], sizeof(FileBlock)) == -1){
+			//fprintf(stderr,"Errore nella get next block file\n");
+			free(next_file);
+			free(index);
+			free(file);
+			return NULL;
+		}
+	free(index);
+	free(file);
+	
+	return next_file;
+	}
+}
+
 //A. Funzione che restituisce il blocco successivo directory
 DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* disk){
 	BlockIndex* index = get_block_index_directory(directory,disk); //A. Estraggo il blocco index
@@ -1488,6 +1416,64 @@ DirectoryBlock* get_next_block_directory(DirectoryBlock* directory,DiskDriver* d
 	 
 	//R. Caso in cui devo andare nel blocco index successivo
 	if((current_position + 1) == MAX_BLOCKS){
+		if(index->next == -1){
+			//fprintf(stderr,"Error in get next block directory\n");
+			free(index);
+			free(directory);
+			return NULL;
+		}
+		BlockIndex* next = (BlockIndex*)malloc(sizeof(BlockIndex));
+		if(DiskDriver_readBlock(disk, next, index->next, sizeof(BlockIndex)) == -1){
+			//fprintf(stderr,"Errore nella get next block directory\n");
+			free(next);
+			free(index);
+			free(directory);
+			return NULL;
+		}
+		DirectoryBlock* next_directory = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+		if(DiskDriver_readBlock(disk, next_directory, next->blocks[0], sizeof(DirectoryBlock)) == -1){
+			//fprintf(stderr,"Errore nella get next block directory\n");
+			free(next_directory);
+			free(index);
+			free(next);
+			free(directory);
+			return NULL;
+		}
+		free(index);
+		free(next);
+		free(directory);
+		
+		return next_directory;
+	}
+	else{
+	//A. Caso in cui mi trovo ancora nello stesso blocco index
+	DirectoryBlock* next_directory = (DirectoryBlock*)malloc(sizeof(DirectoryBlock));
+	if(DiskDriver_readBlock(disk, next_directory, index->blocks[current_position + 1], sizeof(DirectoryBlock)) == -1){
+			//fprintf(stderr,"Errore nella get next block directory\n");
+			free(next_directory);
+			free(index);
+			free(directory);
+			return NULL;
+		}
+	free(index);
+	free(directory);
+	
+	return next_directory;
+	}
+}
+
+DirectoryBlock* get_next_block_directory_first(DirectoryBlock* directory,DiskDriver* disk){
+	FirstBlockIndex* index = get_block_index_directory_first(directory,disk); //A. Estraggo il blocco index
+	if(index == NULL){
+		//fprintf(stderr,"Error in get next block directory\n");
+		free(directory);
+		return NULL;
+	}
+	
+	int current_position = directory->position; //A. posizione nell'array index
+	 
+	//R. Caso in cui devo andare nel blocco index successivo
+	if((current_position + 1) == MAX_BLOCKS_FIRST){
 		if(index->next == -1){
 			//fprintf(stderr,"Error in get next block directory\n");
 			free(index);
@@ -1640,6 +1626,106 @@ int create_next_file_block(FileBlock* current_block, FileBlock* new, DiskDriver*
 
 }
 
+int create_next_file_block_first(FileBlock* current_block, FileBlock* new, DiskDriver* disk){
+	int current_position_in_index = current_block -> position;
+	
+	if(current_position_in_index + 1 == MAX_BLOCKS_FIRST){
+		//R. Caso in cui devo creare un nuovo blocco index e collegarlo
+		FirstBlockIndex* index = get_block_index_file_first(current_block,disk); //R. Recupero il blocco index
+		if(index == NULL){
+			fprintf(stderr,"Error in create_next_file_block: get index block\n");
+			return -1;
+		}
+		
+		//print_index_block(index);
+		
+		//R. Ottengo il nuovo blocco libero per index
+		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
+		if(new_index_block == -1){
+			fprintf(stderr,"Error in create_next_file_block: get free block\n");
+			free(index);
+			return -1;
+		}
+		
+		//R. Ottengo il nuovo blocco libero per blocco
+		int block_return = DiskDriver_getFreeBlock(disk, new_index_block + 1);
+		if(block_return == -1){
+			fprintf(stderr,"Error in create_next_file_block: get free block\n");
+			free(index);
+			return -1;
+		}
+		
+		int index_block = current_block -> index_block; //R. Recupero il blocco index nel disk driver
+		
+		//R. Aggiorno il vecchio blocco index e lo riscrivo sul disco
+		index->next = new_index_block;
+		
+		if(DiskDriver_updateBlock(disk, index, index_block, sizeof(FirstBlockIndex)) == -1){
+			fprintf(stderr,"Error in create_next_file_block: update index block\n");
+			free(index);
+			return -1;
+		}
+		
+		 //R. Creo il nuovo blocco index, lo aggiorno e lo scrivo sul blocco
+		BlockIndex new_index = create_block_index(index_block);
+		new_index.blocks[0] = block_return;
+		if(DiskDriver_writeBlock(disk, &new_index, new_index_block, sizeof(BlockIndex)) == -1){
+			fprintf(stderr,"Error in create_next_file_block: write new index block\n");
+			free(index);
+			return -1;
+		}
+		
+		//R. Inizializzo il nuovo blocco
+		//FileBlock new_block;
+		new->index_block = new_index_block;
+		new->position = 0;
+		//new = &new_block; //R. Salvo il file block nel puntatore che passo alla funzione
+		
+		free(index);
+		
+		return block_return;
+		
+	}
+	else{
+		//R. Caso in cui posso utilizzare il blocco index corrente
+		
+		FirstBlockIndex* index = get_block_index_file_first(current_block,disk); //R. Recupero il blocco index
+		if(index == NULL){
+			fprintf(stderr,"Error in create_next_file_block: get index block\n");
+			return -1;
+		}
+		
+		//print_index_block(index);
+		
+		int index_block = current_block -> index_block; //R. Recupero il blocco index nel disk driver
+		
+		//R. Inizializzo il nuovo blocco
+		new->index_block = index_block;
+		new->position = current_position_in_index + 1;
+		
+		//R. Ottengo il nuovo blocco libero
+		int block_return = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
+		if(block_return == -1){
+			fprintf(stderr,"Error in create_next_file_block: get free block\n");
+			free(index);
+			return -1;
+		}
+		
+		//R. Aggiorno il blocco index e lo riscrivo sul disco
+		index->blocks[new->position] = block_return;
+		if(DiskDriver_updateBlock(disk, index, index_block, sizeof(FirstBlockIndex)) == -1){
+			fprintf(stderr,"Error in create_next_file_block: update index block\n");
+			free(index);
+			return -1;
+		}
+		
+		free(index);
+		
+		return block_return;
+	}
+
+}
+
 
 //A. Funzione per creare un nuovo directory block collegandolo con il blocco index di riferimento.
 int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk){
@@ -1745,6 +1831,109 @@ int create_next_directory_block(DirectoryBlock* current_block, DirectoryBlock* n
 
 }
 
+int create_next_directory_block_first(DirectoryBlock* current_block, DirectoryBlock* new, DiskDriver* disk){
+	int current_position_in_index = current_block -> position;
+	int i;
+	
+	//A. Caso in cui devo creare un nuovo blocco index e collegarlo
+	if(current_position_in_index + 1 == MAX_BLOCKS_FIRST){	
+		
+		FirstBlockIndex* index = get_block_index_directory_first(current_block,disk); 
+		if(index == NULL){
+			fprintf(stderr,"Error in create_next_directory_block: get index block\n");
+			return -1;
+		}
+		
+		//print_index_block(index);
+		
+		//A. Ottengo il nuovo blocco libero per index
+		int new_index_block = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
+		if(new_index_block == -1){
+			fprintf(stderr,"Error in create_next_directory_block: get free block\n");
+			free(index);
+			return -1;
+		}
+		
+		//A. Ottengo il nuovo blocco libero per blocco
+		int block_return = DiskDriver_getFreeBlock(disk, new_index_block + 1);
+		if(block_return == -1){
+			fprintf(stderr,"Error in create_next_directory_block: get free block\n");
+			free(index);
+			return -1;
+		}
+		
+		int index_block = current_block -> index_block; 
+		
+		//A. Aggiorno il vecchio blocco index e lo riscrivo sul disco
+		index->next = new_index_block;
+		if(DiskDriver_updateBlock(disk, index, index_block, sizeof(FirstBlockIndex)) == -1){
+			fprintf(stderr,"Error in create_next_directory_block: update index block\n");
+			free(index);
+			return -1;
+		}
+		
+		//A. Creo il nuovo blocco index, lo aggiorno e lo scrivo sul blocco
+		BlockIndex new_index = create_block_index(index_block);
+		new_index.blocks[0] = block_return;
+		if(DiskDriver_writeBlock(disk, &new_index, new_index_block, sizeof(BlockIndex)) == -1){
+			fprintf(stderr,"Error in create_next_directory_block: write new index block\n");
+			free(index);
+			return -1;
+		}
+		
+		//A. Si Inizializza il nuovo blocco
+		new->index_block = new_index_block;
+		new->position = 0;
+		for(i=0;i<((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int));i++)
+			new->file_blocks[i] = 0;
+		
+		free(index); 
+		
+		return block_return;
+		
+	}
+	else{
+		
+		//A. Caso in cui posso utilizzare il blocco index corrente
+		FirstBlockIndex* index = get_block_index_directory_first(current_block,disk); 
+		if(index == NULL){
+			fprintf(stderr,"Error in create_next_directory_block: get index block\n");
+			return -1;
+		}
+		
+		//print_index_block(index);
+		
+		int index_block = current_block -> index_block; 
+		
+		//A. Inizializzo il nuovo blocco
+		new->index_block = index_block;
+		new->position = current_position_in_index + 1;
+		for(i=0;i<((BLOCK_SIZE-sizeof(int)-sizeof(int))/sizeof(int));i++)
+			new->file_blocks[i] = 0; 
+		
+		//A. Ottengo il nuovo blocco libero
+		int block_return = DiskDriver_getFreeBlock(disk, index->blocks[current_position_in_index]);
+		if(block_return == -1){
+			fprintf(stderr,"Error in create_next_directory_block: get free block\n");
+			free(index);
+			return -1;
+		}
+		
+		//A. Aggiorno il blocco index e lo riscrivo sul disco
+		index->blocks[new->position] = block_return;
+		if(DiskDriver_updateBlock(disk, index, index_block, sizeof(FirstBlockIndex)) == -1){
+			fprintf(stderr,"Error in create_next_directory_block: update index block\n");
+			free(index);
+			return -1;
+		}
+		
+		free(index);
+		
+		return block_return;
+	}
+
+}
+
 // Funzione per ottenere la posizione nel disco di un file block
 int get_position_disk_file_block(FileBlock* file_block, DiskDriver* disk){
 	BlockIndex index;
@@ -1755,10 +1944,28 @@ int get_position_disk_file_block(FileBlock* file_block, DiskDriver* disk){
 	return index.blocks[file_block->position];
 }
 
+int get_position_disk_file_block_first(FileBlock* file_block, DiskDriver* disk){
+	FirstBlockIndex index;
+	if(DiskDriver_readBlock(disk, &index, file_block->index_block, sizeof(FirstBlockIndex)) == -1){
+		fprintf(stderr,"Error in get_position_disk_file_block: could not read block index.\n");
+		return -1;
+	}
+	return index.blocks[file_block->position];
+}
+
 // Funzione per ottenere la posizione nel disco di un directory block
 int get_position_disk_directory_block(DirectoryBlock* directory_block, DiskDriver* disk){
 	BlockIndex index;
 	if(DiskDriver_readBlock(disk, &index, directory_block->index_block, sizeof(BlockIndex)) == -1){
+		fprintf(stderr,"Error in get_position_disk_directory_block: could not read block index.\n");
+		return -1;
+	}
+	return index.blocks[directory_block->position];
+}
+
+int get_position_disk_directory_block_first(DirectoryBlock* directory_block, DiskDriver* disk){
+	FirstBlockIndex index;
+	if(DiskDriver_readBlock(disk, &index, directory_block->index_block, sizeof(FirstBlockIndex)) == -1){
 		fprintf(stderr,"Error in get_position_disk_directory_block: could not read block index.\n");
 		return -1;
 	}
@@ -1805,10 +2012,16 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, char* el
 
 		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
 		if(fdb->num_entries > i){
-			db = get_next_block_directory(db,disk);
+			if(fdb->fcb.block_in_disk == db->index_block)
+				db = get_next_block_directory_first(db,disk);
+			else
+				db = get_next_block_directory(db,disk);
 			
 			while(db != NULL){
-				pos_in_disk = get_position_disk_directory_block(db,disk);
+				if(fdb->fcb.block_in_disk == db->index_block)
+					pos_in_disk = get_position_disk_directory_block_first(db,disk);
+				else
+					pos_in_disk = get_position_disk_directory_block(db,disk);
 				
 				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
 				if(res == -1){
@@ -1827,7 +2040,10 @@ int SimpleFS_already_exists(DiskDriver* disk, FirstDirectoryBlock* fdb, char* el
 						}
 					}
 				}
-				db = get_next_block_directory(db,disk);
+				if(fdb->fcb.block_in_disk == db->index_block)
+					db = get_next_block_directory_first(db,disk);
+				else
+					db = get_next_block_directory(db,disk);
 			}
 		}
 	}
@@ -1875,10 +2091,16 @@ int SimpleFS_already_exists_remove(DiskDriver* disk, FirstDirectoryBlock* fdb, c
 
 		//A. Se ci sono altri blocchi directory vanno controllati anche quelli
 		if(fdb->num_entries > i){
-			db = get_next_block_directory(db,disk);
+			if(fdb->fcb.block_in_disk == db->index_block)
+				db = get_next_block_directory_first(db,disk);
+			else
+				db = get_next_block_directory(db,disk);
 			
 			while(db != NULL){
-				pos_in_disk = get_position_disk_directory_block(db,disk);
+				if(fdb->fcb.block_in_disk == db->index_block)
+					pos_in_disk = get_position_disk_directory_block_first(db,disk);
+				else
+					pos_in_disk = get_position_disk_directory_block(db,disk);
 				
 				res = DiskDriver_readBlock(disk, &ffb_to_check, pos_in_disk, sizeof(FirstFileBlock));
 				if(res == -1){
@@ -1899,7 +2121,10 @@ int SimpleFS_already_exists_remove(DiskDriver* disk, FirstDirectoryBlock* fdb, c
 						}
 					}
 				}
-				db = get_next_block_directory(db,disk);
+				if(fdb->fcb.block_in_disk == db->index_block)
+					db = get_next_block_directory_first(db,disk);
+				else
+					db = get_next_block_directory(db,disk);
 			}
 		}
 	}
@@ -1947,7 +2172,12 @@ int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, int pos
 	
 	//A. Ci sono altri blocchi da controllare e non abbiamo trovato ancora un blocco libero
 	if(fdb->num_entries > i && found == 0){
-		db = get_next_block_directory(db,disk);
+		
+		if(fdb->fcb.block_in_disk == db->index_block){
+			db = get_next_block_directory_first(db,disk);}
+		else{
+			db = get_next_block_directory(db,disk);}
+		
 			
 			while(db != NULL && found == 0){
 				
@@ -1958,7 +2188,10 @@ int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, int pos
 						break;
 					}
 				}
-				db = get_next_block_directory(db,disk);
+				if(fdb->fcb.block_in_disk == db->index_block)
+					db = get_next_block_directory_first(db,disk);
+				else
+					db = get_next_block_directory(db,disk);
 			}
 	}
 	
@@ -1972,7 +2205,12 @@ int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, int pos
 			free(db);
 			return -1;
 		}
-		int pos = create_next_directory_block(db, db_new, disk);
+		int pos;
+		if(fdb->fcb.block_in_disk == db->index_block)
+			pos = create_next_directory_block_first(db, db_new, disk);
+		else
+			pos = create_next_directory_block(db, db_new, disk);
+		
 		if(pos == -1){
 			fprintf(stderr,"Error in SimpleFS_assignDirectory: crate next directory block.\n");
 			DiskDriver_freeBlock(disk, pos_ffb);
@@ -2010,7 +2248,12 @@ int SimpleFS_assignDirectory(DiskDriver* disk, FirstDirectoryBlock* fdb, int pos
 	}
 	
 	//A. E aggiorno il DirectoryBlock su cui ho scritto il file
-	int pos_db = get_position_disk_directory_block(db,disk);
+	int pos_db;
+	if(fdb->fcb.block_in_disk == db->index_block)
+		pos_db = get_position_disk_directory_block_first(db,disk);
+	else
+		pos_db = get_position_disk_directory_block(db,disk);
+
 	if(DiskDriver_updateBlock(disk, db, pos_db, sizeof(DirectoryBlock)) == -1){
 		fprintf(stderr,"Error in SimpleFS_assignDirectory: updateBlock on db.\n");
 		DiskDriver_freeBlock(disk, pos_ffb);
@@ -2035,6 +2278,20 @@ void print_index_block(BlockIndex* index){
 	printf("Next: %d\n",index->next);
 	printf("=====================================\n");
 }
+
+void print_index_block_first(FirstBlockIndex* index){
+	printf("============ INDEX BLOCK ============\n");
+	printf("Block_index_information:\n");
+	printf("Previous: %d\n",index->previous);
+	int i;
+	for(i=0;i<MAX_BLOCKS_FIRST;i++){
+		printf("Blocco %d: %d\n",i+1,index->blocks[i]);
+	}
+	printf("Next: %d\n",index->next);
+	printf("=====================================\n");
+}
+
+
 
 
   
